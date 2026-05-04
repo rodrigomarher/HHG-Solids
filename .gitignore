@@ -1,0 +1,7 @@
+test_hamiltonian.py
+.DS_Store
+__MACOSX/
+*.swp
+lapack/
+build/
+PREFIX/
