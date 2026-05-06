@@ -42,3 +42,7 @@ void Observable::write(std::string filename){
         std::cout<< "[Observable] Error opening file: " << filename<< std::endl;
     }
 }
+
+cdouble* Observable::get_ptr(){
+    return _data->data();
+}

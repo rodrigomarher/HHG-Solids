@@ -5,3 +5,5 @@ __MACOSX/
 lapack/
 build/
 PREFIX/
+__pycache__/
+results/

@@ -12,6 +12,7 @@
 #include "efield.h"
 #include "solver.h"
 #include "solver_kspace.h"
+#include "observable.h"
 
 class SWESim{
     private:
@@ -26,6 +27,9 @@ class SWESim{
         MatrixField *_diagonalization;
         Efield* _efield;
         Solver* _solver;
+        Observable* _jx;
+        Observable* _jy;
+        Observable* _jz;
 
         std::string _path_tb;
         
@@ -34,8 +38,15 @@ class SWESim{
         void _convert_to_si();
         void _calc_peierls_phase(double ax, double ay, double az, cdouble* peierls_phase);
     public:
-        SWESim(const std::string &path_tb);
+        SWESim();
+        SWESim(const std::string &path_tb, Settings* settings);
         void run_simulation();
         void test_files(); 
+        void set_path_tb(const std::string &path_tb);
+        void set_settings(Settings* settings);
+        void init();
+        void restart(); 
+        void get_current(double* t, cdouble* jx, cdouble* jy, cdouble* jz);
+        void save_current(const std::string &path);
         ~SWESim();
 };

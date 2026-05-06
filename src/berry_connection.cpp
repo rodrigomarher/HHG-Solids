@@ -37,7 +37,7 @@ void BerryConnection::_setup(){
         int in_wannier = _wannier->check_vec_in_wannier(coefs_i);
         if (in_wannier != -1){
             for(int idx_orb = 0; idx_orb < _num_orbitals * _num_orbitals; idx_orb++){
-                _matrix->set(wann_berry_connection[in_wannier*_num_orbitals*_num_orbitals + idx_orb], idx_r, idx_orb);
+                _matrix->set(-wann_berry_connection[in_wannier*_num_orbitals*_num_orbitals + idx_orb], idx_r, idx_orb);
             }
         }
     }

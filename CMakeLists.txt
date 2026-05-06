@@ -41,6 +41,7 @@ add_library(wannier_src OBJECT
     src/fftw_helper.cpp
     src/observable.cpp
     src/interpolation.cpp
+    src/cwrapper.cpp
 )
 
 set_property(TARGET wannier_src PROPERTY POSITION_INDEPENDENT_CODE 1)

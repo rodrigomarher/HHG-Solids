@@ -1,21 +1,55 @@
 #include <iostream>
+#include <iomanip>
 #include <lapacke.h>
 #include <string>
 #include "swe.h"
 #include "observable.h"
 #include "fftw_helper.h"
 
-SWESim::SWESim(const std::string &path_tb){
+SWESim::SWESim(){}
+
+SWESim::SWESim(const std::string &path_tb, Settings* settings){
     _path_tb = path_tb;
+    _unit_system = SI;
+    _settings = settings;
     _init();        
 }
 
+void SWESim::restart(){
+    delete _rho;
+    delete _r_bc[0];
+    delete _r_bc[1];
+    delete _r_bc[2];
+    delete _v[0];
+    delete _v[1];
+    delete _v[2];
+    delete _diagonalization;
+    delete _solver;
+    delete _wannier;
+    delete _grid;
+    delete _efield;
+    delete _jx;
+    delete _jy;
+    delete _jz;
+    _init();
+}
+
+void SWESim::init(){
+    _init();
+}
+
+void SWESim::set_path_tb(const std::string &path_tb){
+    _path_tb = path_tb;
+}
+
+void SWESim::set_settings(Settings* settings){
+    _settings = settings;
+}
+
 void SWESim::_init(){
-    _unit_system = SI;
+
     _wannier = new WannierTB(_path_tb);
-
-
-    _settings = new Settings();
+    _settings->nt = _settings->tmax/_settings->dt;
     _settings->path_tb = _path_tb;
     _settings->num_orb = _wannier->num_orb;
     _settings->num_sites = _wannier->num_sites;
@@ -35,37 +69,26 @@ void SWESim::_init(){
     _diagonalization = new MatrixField(_settings, _wannier);
     _efield = new Efield(_settings, _grid, _unit_system);
 
+    _jx = new Observable(_settings, _grid, _rho, _v[0]);
+    _jy = new Observable(_settings, _grid, _rho, _v[1]);
+    _jz = new Observable(_settings, _grid, _rho, _v[2]);
+
     _solver = new Solver(_settings, _grid, _hamiltonian, _rho, _r_bc, _efield, _wannier);
 
     _convert_to_au(); 
     
     _efield->init_fields();
-    _hamiltonian->write("test/hamiltonian_r_W_AU.dat");
     _hamiltonian->convert_to_k();
-    _hamiltonian->write("test/hamiltonian_k_W_AU.dat");
     _hamiltonian->diagonalization_W_KSPACE(_diagonalization);
     _rho->convert_to_k();
     _hamiltonian->convert_w_to_h(_diagonalization);
     _rho->convert_w_to_h(_diagonalization);
     _rho->calculate_equilibrium(_hamiltonian);
     _hamiltonian->convert_h_to_w(_diagonalization);
-    _hamiltonian->write("test/hamiltonian_k_W_AU.dat");
     _hamiltonian->convert_to_r();
     _rho->convert_h_to_w(_diagonalization);
-    _rho->write("test/rho_k_W_AU.dat");
     _rho->convert_to_r();
     
-    _grid->supercell_to_file("test/Rvecs_AU.dat");
-    _grid->reciprocal_to_file("test/Kvecs_AU.dat");
-    _rho->write("test/rho_r_W_AU.dat");
-    _r_bc[0]->write("test/rx_W_AU.dat");
-    _r_bc[1]->write("test/ry_W_AU.dat");
-    _r_bc[2]->write("test/rz_W_AU.dat");
-    _v[0]->write("test/vx_W_AU.dat");
-    _v[1]->write("test/vy_W_AU.dat");
-    _v[2]->write("test/vz_W_AU.dat");
-    _efield->write();
-    _diagonalization->write_to_file("test/U_k_AU.dat");
     _solver->init();
 }
 
@@ -107,7 +130,6 @@ void SWESim::_convert_to_si(){
 
 void SWESim::test_files(){
     std::cout<<"Writing test files"<<std::endl;
-        
     _convert_to_si();
     _grid->supercell_to_file("test/Rvecs_SI.dat");
     _grid->reciprocal_to_file("test/Kvecs_SI.dat");
@@ -162,12 +184,11 @@ void SWESim::run_simulation(){
     int _num_points  =_settings->nr1*_settings->nr2*_settings->nr3;
     int _num_orbitals = _settings->num_orb;
     cdouble* peierls_phase = new cdouble[_num_points];
-    Observable rho(_settings, _grid, _rho, _rho);
-    Observable jx(_settings, _grid, _rho, _v[0]);
-    Observable jy(_settings, _grid, _rho, _v[1]);
-    Observable jz(_settings, _grid, _rho, _v[2]);
+    //Observable rho(_settings, _grid, _rho, _rho);
     for(int ti = 0; ti<_settings->nt; ti++){
-        std::cout<<"\t ti: " << ti<<std::endl;
+        if(ti%10 == 0){
+            std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
+        }
         double ax = _efield->A_x[ti];
         double ay = _efield->A_y[ti];
         double az = _efield->A_z[ti];
@@ -179,14 +200,14 @@ void SWESim::run_simulation(){
                 _rho->set(rho_value*std::conj(peierls_phase[idx_r]), idx_r, iorb);
             }
         }
-        jx.calculate();
-        jy.calculate();
-        jz.calculate();
+        _jx->calculate();
+        _jy->calculate();
+        _jz->calculate();
         //rho.calculate();
         //if(ti%100 == 0){
         //    std::ostringstream oss;
         //    oss << "test/rho_r_W_AU_" << ti << ".dat"; 
-        //    _rho->write(oss.str());
+         //    _rho->write(oss.str());
         //}
         for(int idx_r = 0; idx_r<_num_points; idx_r ++){
             for(int iorb=0; iorb<_num_orbitals*_num_orbitals; iorb++){
@@ -195,18 +216,9 @@ void SWESim::run_simulation(){
             }
         }
     }
-    std::ostringstream oss;
-    oss << _settings->path_results<<"/jx.dat";
-    jx.write(oss.str());
-    oss.str("");
-    oss << _settings->path_results<<"/jy.dat";
-    jy.write(oss.str());
-    oss.str("");
-    oss << _settings->path_results<<"/jz.dat";
-    jz.write(oss.str());
-    oss.str("");
-    oss << _settings->path_results<<"/rho.dat";
-    rho.write(oss.str());
+    //oss.str("");
+    //oss << _settings->path_results<<"/rho.dat";
+    //rho.write(oss.str());
     delete[] peierls_phase;
 }
 
@@ -220,13 +232,42 @@ void SWESim::_calc_peierls_phase(double ax, double ay, double az, cdouble* peier
     }
 }
 
+void SWESim::get_current(double* time, cdouble* jx, cdouble* jy, cdouble* jz){
+    for(int ti = 0; ti < _settings->nt; ti++){
+        time[ti] = _grid->t()[ti];
+        jx[ti] = _jx->get_ptr()[ti];
+        jy[ti] = _jy->get_ptr()[ti];
+        jz[ti] = _jz->get_ptr()[ti];
+    }    
+}
+
+void SWESim::save_current(const std::string &path){
+    std::ostringstream oss;
+    oss << path<<"/jx.dat";
+    _jx->write(oss.str());
+    oss.str("");
+    oss << path<<"/jy.dat";
+    _jy->write(oss.str());
+    oss.str("");
+    oss << path<<"/jz.dat";
+    _jz->write(oss.str());
+
+}
+
 SWESim::~SWESim(){
-    delete _wannier;
-    delete _settings;
-    delete _grid;
-    delete _hamiltonian;
-    delete _diagonalization;
+    delete _rho;
     delete _r_bc[0];
     delete _r_bc[1];
     delete _r_bc[2];
+    delete _v[0];
+    delete _v[1];
+    delete _v[2];
+    delete _diagonalization;
+    delete _solver;
+    delete _wannier;
+    delete _grid;    
+    delete _efield;
+    delete _jx;
+    delete _jy;
+    delete _jz;
 }

@@ -50,8 +50,8 @@ void Velocity::setup(Hamiltonian* ham, BerryConnection* rbc, const int axis){
 
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_numpoints);
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_numpoints);
-    fftw_plan forward = fftw_plan_dft_3d(_settings->nr1, _settings->nr2, _settings->nr3, in, out, FFTW_FORWARD, FFTW_MEASURE);
-    fftw_plan backward = fftw_plan_dft_3d(_settings->nr1, _settings->nr2, _settings->nr3, in, out, FFTW_BACKWARD, FFTW_MEASURE);
+    fftw_plan forward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
+    fftw_plan backward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
 
     for(int iorb = 0; iorb < _num_orbitals; iorb++){
         for(int jorb = 0; jorb < _num_orbitals; jorb++){
@@ -60,6 +60,8 @@ void Velocity::setup(Hamiltonian* ham, BerryConnection* rbc, const int axis){
                 tmp_2[idx_r] = rbc->data_ptr()[idx_r][iorb*_num_orbitals + jorb];
             }
 
+            fftshift(tmp_1, _settings->nr1, _settings->nr2);
+            fftshift(tmp_2, _settings->nr1, _settings->nr2);
             fft3(tmp_1, in, out, _numpoints, forward);
             fft3(tmp_2, in, out, _numpoints, forward);
 

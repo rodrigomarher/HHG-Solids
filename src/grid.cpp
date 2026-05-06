@@ -66,15 +66,15 @@ void Grid::_setup_grid(){
         _t[i] = (double)i*_settings->dt;
     }
     for(int i=0; i<_settings->nr1; i++){
-        _n1[i] = -_settings->nr1/2 + i;
+        _n1[i] = -_settings->nr1/2 + (i);
         _m1[i] = i;
     }    
     for(int i=0; i<_settings->nr2; i++){
-        _n2[i] = -_settings->nr2/2 + i;
+        _n2[i] = -_settings->nr2/2 + (i);
         _m2[i] = i;
     }    
     for(int i=0; i<_settings->nr3; i++){
-        _n3[i] = -_settings->nr3/2 + i;
+        _n3[i] = -_settings->nr3/2 + (i);
         _m3[i] = i;
     }   
 

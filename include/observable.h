@@ -25,4 +25,5 @@ class Observable{
         Observable(Settings *settings, Grid* grid, RDM* rho, Operator* op);
         void calculate();
         void write(std::string filename);
+        cdouble* get_ptr();
 };
