@@ -1,5 +1,5 @@
 #include <iostream>
-#include "lapacke.h"
+#include <lapacke.h>
 #include "hamiltonian.h"
 #include "vec3_util.h"
 #include "constants.h"

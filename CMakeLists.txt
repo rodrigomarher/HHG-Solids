@@ -1,28 +1,32 @@
 cmake_minimum_required(VERSION 3.15)
 project(wannier_project)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "PREFIX/findFFTW")
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 set(BLA_VENDOR OpenBLAS)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
-#find_package(FFTW REQUIRED)
+find_package(LAPACKE REQUIRED)
+find_package(FFTW REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O3 -g -Wall -Wextra -ffast-math  -march=native -fopenmp")
 set(CMAKE_C_FLAGS "-O3 -g -Wall -Wextra -ffast-math  -march=native -fopenmp")
-set(LAPACK_DIR "/opt/homebrew/Cellar/lapack/3.12.1/")
-set(OPENBLAS_DIR "/opt/homebrew/Cellar/openblas/0.3.32/")
-set(FFTW_DIR "/opt/homebrew/Cellar/fftw/3.3.10_3/")
+#set(LAPACK_DIR "/opt/homebrew/Cellar/lapack/3.12.1/")
+#set(OPENBLAS_DIR "/opt/homebrew/Cellar/openblas/0.3.32/")
+#set(FFTW_DIR "/opt/homebrew/Cellar/fftw/3.3.10_3/")
 
 include_directories(include
 	   	    ${LAPACK_DIR}/include
+	   	    ${LAPACKE_DIR}/include
 	   	    ${OPENBLAS_DIR}/include
 		    ${FFTW_DIR}/include)
-
+#
 link_directories(${LAPACK_DIR}/lib)
+link_directories(${LAPACKE_DIR}/lib)
 link_directories(${OPENBLAS_DIR}/lib)
 link_directories(${FFTW_DIR}/lib)
+
 add_library(wannier_src OBJECT
     src/settings.cpp
     src/vec3_util.cpp
