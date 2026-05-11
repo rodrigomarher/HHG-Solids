@@ -7,3 +7,4 @@ build/
 PREFIX/
 __pycache__/
 results/
+*.pckl
