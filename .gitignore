@@ -8,3 +8,6 @@ PREFIX/
 __pycache__/
 results/
 *.pckl
+venv
+*.png
+slurm*
