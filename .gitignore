@@ -11,3 +11,8 @@ results/
 venv
 *.png
 slurm*
+*CMakeFiles*
+*.so
+CMakeCache*
+Makefile
+cmake_install.cmake
