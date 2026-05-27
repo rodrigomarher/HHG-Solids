@@ -1,8 +1,10 @@
 import numpy as np
+import sys
+sys.path.append("../pySWE")
 from pyswe import Settings, SWE
 
-param = {"path_lib": "build/libwannier.dylib",
-	 "path_tb": "hmcase0_tb.dat",
+param = {"path_lib": "../build/libwannier.so",
+	 "path_tb": "../hmcase0_tb.dat",
 	 "nr1": 200,
      "nr2": 200,
      "nr3": 1,
