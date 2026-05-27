@@ -139,6 +139,7 @@ void Solver_kspace::_convert_to_kspace(cdouble** data){
     delete[] tmp1;
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(forward);
 } 
 
 void Solver_kspace::_convert_to_rspace(cdouble** data){
@@ -162,6 +163,7 @@ void Solver_kspace::_convert_to_rspace(cdouble** data){
     delete[] tmp1;
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(backward);
 }
 
 void Solver_kspace::step_rk4(const int ti){

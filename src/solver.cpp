@@ -1492,6 +1492,8 @@ void Solver::_update_k1_conv_fftw(const double ex, const double ey, const double
 
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(forward);
+    fftw_destroy_plan(backward);
     delete[] heff_k;
     delete[] rho_k;    
     delete[] comm_k;
@@ -1567,6 +1569,8 @@ void Solver::_update_k2_conv_fftw(const double ex, const double ey, const double
 
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(forward);
+    fftw_destroy_plan(backward);
     delete[] heff_k;
     delete[] rho_k;    
     delete[] comm_k;
@@ -1643,6 +1647,8 @@ void Solver::_update_k3_conv_fftw(const double ex, const double ey, const double
 
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(forward);
+    fftw_destroy_plan(backward);
     delete[] heff_k;
     delete[] rho_k;    
     delete[] comm_k;
@@ -1718,6 +1724,8 @@ void Solver::_update_k4_conv_fftw(const double ex, const double ey, const double
 
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(forward);
+    fftw_destroy_plan(backward);
     delete[] heff_k;
     delete[] rho_k;    
     delete[] comm_k;

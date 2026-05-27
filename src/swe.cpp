@@ -270,4 +270,5 @@ SWESim::~SWESim(){
     delete _jx;
     delete _jy;
     delete _jz;
+    delete _hamiltonian;
 }

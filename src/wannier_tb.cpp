@@ -233,5 +233,9 @@ WannierTB::~WannierTB(){
         delete[] R_idx[i];
     }
     delete[] R_idx;
+    delete[] x_bc;
+    delete[] y_bc;
+    delete[] z_bc;
+    delete[] hopping;
 }
 

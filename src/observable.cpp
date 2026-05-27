@@ -46,3 +46,7 @@ void Observable::write(std::string filename){
 cdouble* Observable::get_ptr(){
     return _data->data();
 }
+
+Observable::~Observable(){
+    delete _data;
+}

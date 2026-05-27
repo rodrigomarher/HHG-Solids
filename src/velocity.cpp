@@ -106,6 +106,8 @@ void Velocity::setup(Hamiltonian* ham, BerryConnection* rbc, const int axis){
 
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(forward);
+    fftw_destroy_plan(backward);
     delete[] h0_k;
     delete[] rbc_k;    
     delete[] comm_k;

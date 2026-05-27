@@ -26,4 +26,5 @@ class Observable{
         void calculate();
         void write(std::string filename);
         cdouble* get_ptr();
+        ~Observable();
 };

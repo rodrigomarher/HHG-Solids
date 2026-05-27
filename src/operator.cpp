@@ -60,6 +60,7 @@ void Operator::convert_to_k(){
     delete[] tmp1;
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(forward);
 }
 
 void Operator::convert_to_r(){
@@ -84,6 +85,7 @@ void Operator::convert_to_r(){
     delete[] tmp1;
     fftw_free(in);
     fftw_free(out);
+    fftw_destroy_plan(backward);
 }
 
 //void Operator::convert_to_k(){
