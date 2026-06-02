@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(wannier_project LANGUAGES C CXX CUDA)
+project(wannier_project LANGUAGES C CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -7,8 +7,8 @@ set(BLA_VENDOR OpenBLAS)
 find_package(BLAS REQUIRED)
 #find_package(LAPACK REQUIRED)
 find_package(FFTW REQUIRED)
-find_package(CUDA)
-find_package(CUDAToolkit)
+find_package(CUDA QUIET)
+find_package(CUDAToolkit QUIET)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O3 -g -Wall -Wextra -ffast-math  -march=native -fopenmp")
@@ -62,6 +62,7 @@ set(wannier_src
 )
 
 if(CUDA_FOUND)
+    enable_language(CUDA)
     add_definitions(-DHAVE_CUDA)
     set(cuda_src
 	src/cuda_kernels.cu
