@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(wannier_project)
+project(wannier_project LANGUAGES C CXX CUDA)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -7,10 +7,12 @@ set(BLA_VENDOR OpenBLAS)
 find_package(BLAS REQUIRED)
 #find_package(LAPACK REQUIRED)
 find_package(FFTW REQUIRED)
+find_package(CUDA)
+find_package(CUDAToolkit)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-O0 -g -Wall -Wextra -ffast-math  -march=native -fopenmp -mno-avx512f")
-set(CMAKE_C_FLAGS "-O0 -g -Wall -Wextra -ffast-math  -march=native -fopenmp -mno-avx512f")
+set(CMAKE_CXX_FLAGS "-O3 -g -Wall -Wextra -ffast-math  -march=native -fopenmp")
+set(CMAKE_C_FLAGS "-O3 -g -Wall -Wextra -ffast-math  -march=native -fopenmp")
 #set(CMAKE_CXX_FLAGS "-fsanitize=address -fsanitize=undefined -g -O1 -fno-omit-frame-pointer")
 #set(CMAKE_C_FLAGS "-fsanitize=address -fsanitize=undefined -g -O1 -fno-omit-frame-pointer")
 #set(LAPACK_DIR "/opt/homebrew/Cellar/lapack/3.12.1/")
@@ -38,7 +40,7 @@ include_directories(include
 link_directories(${OPENBLAS_DIR}/lib)
 link_directories(${FFTW_DIR}/lib)
 
-add_library(wannier_src OBJECT
+set(wannier_src
     src/settings.cpp
     src/vec3_util.cpp
     src/wannier_tb.cpp
@@ -59,9 +61,20 @@ add_library(wannier_src OBJECT
     src/cwrapper.cpp
 )
 
-set_property(TARGET wannier_src PROPERTY POSITION_INDEPENDENT_CODE 1)
+if(CUDA_FOUND)
+    add_definitions(-DHAVE_CUDA)
+    set(cuda_src
+	src/cuda_kernels.cu
+	src/solver_cuda.cpp)
+    add_library(wannier_cuda ${cuda_src})
+    include_directories(${CUDA_INCLUDE_DIRS})
+    add_library(wannier SHARED ${wannier_src} ${cuda_src})
+else()
+    add_library(wannier SHARED ${wannier_src})
+endif()
 
-add_library(wannier SHARED $<TARGET_OBJECTS:wannier_src>)
+
+set_property(TARGET wannier PROPERTY POSITION_INDEPENDENT_CODE 1)
 target_link_libraries(wannier PUBLIC 
 			          BLAS::BLAS
 				  fftw3)

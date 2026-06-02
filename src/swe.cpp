@@ -186,9 +186,9 @@ void SWESim::run_simulation(){
     cdouble* peierls_phase = new cdouble[_num_points];
     //Observable rho(_settings, _grid, _rho, _rho);
     for(int ti = 0; ti<_settings->nt; ti++){
-        if(ti%10 == 0){
-            std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
-        }
+        //if(ti%10 == 0){
+        //    std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
+        //}
         double ax = _efield->A_x[ti];
         double ay = _efield->A_y[ti];
         double az = _efield->A_z[ti];
