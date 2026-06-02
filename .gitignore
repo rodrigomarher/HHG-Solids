@@ -16,3 +16,4 @@ slurm*
 CMakeCache*
 Makefile
 cmake_install.cmake
+run.sh

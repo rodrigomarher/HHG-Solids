@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+import numpy as np
 
 #filepath = '../SimData/GrSymTB_nk700_PolScan.tar'
-filepath = 'hmcase1_I1e12_nk600.pckl'
-figname = "hmcase1_"
-q = [3,4,7,9,11,13, 25]
+filepath = 'hmcase0_I1e12_nk400.pckl'
+figname = "hmcase0_nk400_"
+q = np.arange(3,29,1)
 P = 1
 import numpy as np
 import matplotlib.pyplot as plt
@@ -213,11 +214,11 @@ def plot_data(path, q):
     #far_field_q_rcp /= np.abs(far_field_q_rcp).max()
     coefs_interp = (hhg_q_rcp_coefs_real, hhg_q_rcp_coefs_imag)
     far_field_q_rcp = prop_q(coefs_interp, pol_angles, freq, q, theta=theta, omega=omega)
-    far_field_q_rcp /= np.abs(far_field_q_rcp).max()
+    #far_field_q_rcp /= np.abs(far_field_q_rcp).max()
 
     coefs_interp = (hhg_q_lcp_coefs_real, hhg_q_lcp_coefs_imag)
     far_field_q_lcp = prop_q(coefs_interp, pol_angles, freq, q, theta=theta, omega=omega)
-    far_field_q_lcp /= np.abs(far_field_q_lcp).max()
+    #far_field_q_lcp /= np.abs(far_field_q_lcp).max()
     #
     #far_field_q_lcp = prop_q([hhg_q_lcp_coefs_real, hhg_q_lcp_coefs_imag], pol_angles, freq, q, theta=theta, omega=omega)
     #far_field_q_lcp /= np.abs(far_field_q_lcp).max()
@@ -227,10 +228,14 @@ def plot_data(path, q):
     print("\t c_rcp_pos: ",np.abs(c_rcp_plus), np.angle(c_rcp_plus)/np.pi, "$\\pi$")
     print("\t c_lcp_neg: ",np.abs(c_lcp_neg), np.angle(c_rcp_plus)/np.pi,"$\\pi$")
     print("\t c_rcp_pos: ",np.abs(c_lcp_plus), np.angle(c_lcp_plus)/np.pi,"$\\pi$")
+
+    print("E_max (lcp): ",np.abs(far_field_q_lcp).max(), " E_max (rcp): ", np.abs(far_field_q_rcp).max())
+    max_value = np.abs(far_field_q_lcp).max()**2 if np.abs(far_field_q_lcp).max() > np.abs(far_field_q_rcp).max() else np.abs(far_field_q_rcp
+).max()**2
     
     fig = plt.figure(figsize=(12.5,4),constrained_layout=True)
     ax = fig.add_subplot(1,3,1)
-    ax.pcolormesh(X*1e3,Y*1e3, np.abs(far_field_q_rcp.T)**2, cmap='turbo', shading='gouraud')
+    ax.pcolormesh(X*1e3,Y*1e3, np.abs(far_field_q_rcp.T)**2, vmax = max_value*1.03, cmap='turbo', shading='gouraud')
     ax.set_xlabel("X divergence (mrad)", fontsize=15)
     ax.set_ylabel("Y divergence (mrad)", fontsize=15)
     
@@ -266,7 +271,7 @@ def plot_data(path, q):
     
     
     ax = fig.add_subplot(1,3,2)
-    ax.pcolormesh(X*1e3,Y*1e3, np.abs(far_field_q_lcp.T)**2, cmap='turbo', shading='gouraud')
+    ax.pcolormesh(X*1e3,Y*1e3, np.abs(far_field_q_lcp.T)**2, vmax = max_value*1.03, cmap='turbo', shading='gouraud')
     ax.set_xlabel("X divergence (mrad)", fontsize=15)
     ax.set_ylabel("Y divergence (mrad)", fontsize=15)
     
@@ -290,7 +295,6 @@ def plot_data(path, q):
     
     mask_intensity = np.ones(far_field_q_lcp.shape)*0.6
     mask_intensity[np.abs(far_field_q_lcp)**2>0.05] = 0.
-    print(np.abs(far_field_q_lcp).max()**2)
     
     axins.pcolormesh(X*1e3,Y*1e3, np.angle(far_field_q_lcp.T)**1, vmin=-np.pi, vmax=np.pi,cmap='hsv', shading='gouraud', )
     axins.pcolormesh(X*1e3,Y*1e3, np.angle(far_field_q_lcp.T)**1, cmap='grey', shading='gouraud', alpha=mask_intensity.T)

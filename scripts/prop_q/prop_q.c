@@ -162,6 +162,6 @@ void prop_q_c(
     }
 
     /* Mirror the per-row print from the original Python */
-    for (int i = 0; i < n_theta; ++i)
+    //for (int i = 0; i < n_theta; ++i)
         //printf("%d  theta = %g\n", i, theta[i]);
 }
