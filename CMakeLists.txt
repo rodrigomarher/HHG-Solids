@@ -76,11 +76,24 @@ endif()
 
 
 set_property(TARGET wannier PROPERTY POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(wannier PUBLIC 
+
+if(CUDA_FOUND)
+    target_link_libraries(wannier PUBLIC 
 			          BLAS::BLAS
+				  CUDA::cufft_static
 				  fftw3)
+    
+    set_target_properties(wannier PROPERTIES
+		          CUDA_SEPARABLE_COMPILATION ON)
+
+else()
+    target_link_libraries(wannier PUBLIC 
+			          BLAS::BLAS				  
+				  fftw3)
+endif()
 
 add_executable(main src/main.cpp)
+
 target_link_libraries(main
 		      wannier) 
 

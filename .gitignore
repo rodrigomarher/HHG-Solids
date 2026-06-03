@@ -17,3 +17,5 @@ CMakeCache*
 Makefile
 cmake_install.cmake
 run.sh
+hmcase3_tb.dat
+hmcase4_tb.dat
