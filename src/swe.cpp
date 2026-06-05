@@ -6,6 +6,11 @@
 #include "observable.h"
 #include "fftw_helper.h"
 
+#ifdef HAVE_CUDA
+#include <cuda_runtime.h>
+#include "cuda_helpers/helper_cuda.h"
+#endif
+
 SWESim::SWESim(){}
 
 SWESim::SWESim(const std::string &path_tb, Settings* settings){
@@ -73,7 +78,15 @@ void SWESim::_init(){
     _jy = new Observable(_settings, _grid, _rho, _v[1]);
     _jz = new Observable(_settings, _grid, _rho, _v[2]);
 
+    #ifdef HAVE_CUDA
+    _device = 0;
+    _stream = new cudaStream_t;
+    checkCudaErrors(cudaSetDevice(_device));
+    checkCudaErrors(cudaStreamCreate(_stream));
+    _solver = new Solver_cuda(_settings, _grid, _hamiltonian, _rho, _r_bc, _efield, _wannier, _stream);
+    #else
     _solver = new Solver(_settings, _grid, _hamiltonian, _rho, _r_bc, _efield, _wannier);
+    #endif
 
     _convert_to_au(); 
     
@@ -181,6 +194,45 @@ void SWESim::test_files(){
 }
 
 void SWESim::run_simulation(){
+    #ifdef HAVE_CUDA
+    _run_simulation_cuda();
+    #else
+    _run_simulation_cpu();
+    #endif
+}
+
+#ifdef HAVE_CUDA
+void SWESim::_run_simulation_cuda(){
+    int _num_points  =_settings->nr1*_settings->nr2*_settings->nr3;
+    int _num_orbitals = _settings->num_orb;
+    cdouble* peierls_phase = new cdouble[_num_points];
+    for(int ti = 0; ti<_settings->nt; ti++){
+        _solver->step_rk4(ti);
+        //if(ti%10 == 0){
+        //    std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
+        //}
+        double ax = _efield->A_x[ti];
+        double ay = _efield->A_y[ti];
+        double az = _efield->A_z[ti];
+        _calc_peierls_phase(ax, ay, az, peierls_phase);
+        for(int idx_r = 0; idx_r<_num_points; idx_r ++){
+            for(int iorb=0; iorb<_num_orbitals*_num_orbitals; iorb++){
+                cdouble rho_value = _rho->data_ptr()[idx_r][iorb];
+                _rho->set(rho_value*std::conj(peierls_phase[idx_r]), idx_r, iorb);
+                //if(rho_value.real()!=0 || rho_value.imag()!=0){
+                //    std::cout<<"idx_r: "<<idx_r<< ", iorb:  "<<iorb<<" jorb: "<<rho_value<<std::endl;
+                //}
+            }
+        }
+        _jx->calculate();
+        _jy->calculate();
+        _jz->calculate();
+    }
+    delete[] peierls_phase;
+}
+#else
+
+void SWESim::_run_simulation_cpu(){
     int _num_points  =_settings->nr1*_settings->nr2*_settings->nr3;
     int _num_orbitals = _settings->num_orb;
     cdouble* peierls_phase = new cdouble[_num_points];
@@ -221,7 +273,7 @@ void SWESim::run_simulation(){
     //rho.write(oss.str());
     delete[] peierls_phase;
 }
-
+#endif
 void SWESim::_calc_peierls_phase(double ax, double ay, double az, cdouble* peierls_phase){
     int _num_points  =_settings->nr1*_settings->nr2*_settings->nr3;
     for(int idx_r = 0; idx_r<_num_points; idx_r++){
@@ -271,4 +323,8 @@ SWESim::~SWESim(){
     delete _jy;
     delete _jz;
     delete _hamiltonian;
+    #ifdef HAVE_CUDA
+    cudaSetDevice(_device);
+    cudaStreamDestroy(*_stream);
+    #endif
 }

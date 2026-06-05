@@ -21,7 +21,6 @@ __global__ void kernel_update_heff(const double ex, const double ey, const doubl
                                    const int num_points, const int num_orbitals){
     int idx_r = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx_r >= num_points){return;}
-    
     cdouble_cuda value = make_cuDoubleComplex(0.0,0.0);
     for(int iorb = 0; iorb<num_orbitals*num_orbitals; iorb++){
         value = d_h0[idx_r*num_orbitals*num_orbitals + iorb];
@@ -71,6 +70,15 @@ __global__ void kernel_fftshift2D(cdouble_cuda* data, const int nr1, const int n
     t = s[q2]; s[q2] = s[q3]; s[q3] = t;
 }
 
+__global__ void kernel_scale_inverse_fft(cdouble_cuda* data, const int num_points, const int num_orbitals){
+    int idx_r = blockIdx.x * blockDim.x + threadIdx.x;
+    int iorb = blockIdx.y;
+    int jorb = blockIdx.z;
+    if(idx_r >= num_points || iorb >= num_orbitals || jorb>= num_orbitals){return;}
+    int idx = iorb*num_orbitals*num_points + jorb*num_points + idx_r;
+    data[idx] = cuCmul(make_cuDoubleComplex(1.0/num_points,0.0), data[idx]);
+}
+
 __global__ void kernel_commutator_k(cdouble_cuda* d_comm_k, cdouble_cuda* d_heff_k, cdouble_cuda* d_rho_k, const int num_points, const int num_orbitals){
     int idx_k = blockIdx.x*blockDim.x + threadIdx.x;
     int iorb = blockIdx.y;
@@ -80,8 +88,8 @@ __global__ void kernel_commutator_k(cdouble_cuda* d_comm_k, cdouble_cuda* d_heff
     for(int korb = 0; korb<num_orbitals; korb++){
         cdouble_cuda h0 = d_heff_k[iorb*num_points*num_orbitals + korb*num_points + idx_k]; 
         cdouble_cuda h1 = d_heff_k[korb*num_points*num_orbitals + jorb*num_points + idx_k]; 
-        cdouble_cuda rho0 = d_heff_k[korb*num_points*num_orbitals + jorb*num_points + idx_k]; 
-        cdouble_cuda rho1 = d_heff_k[iorb*num_points*num_orbitals + korb*num_points + idx_k]; 
+        cdouble_cuda rho0 = d_rho_k[korb*num_points*num_orbitals + jorb*num_points + idx_k]; 
+        cdouble_cuda rho1 = d_rho_k[iorb*num_points*num_orbitals + korb*num_points + idx_k]; 
         comm_k = cuCadd(comm_k, cuCsub(cuCmul(h0,rho0), cuCmul(rho1,h1)));
     }
     d_comm_k[iorb*num_points*num_orbitals + jorb*num_points + idx_k] = comm_k;
@@ -93,8 +101,8 @@ __global__ void kernel_update_kn(cdouble_cuda* d_kn, cdouble_cuda* d_comm, const
     int jorb = blockIdx.z;
     if(idx_r >= num_points || iorb>=num_orbitals || jorb>=num_orbitals){return;}
 
-    cdouble_cuda value = d_comm[iorb*num_points*num_orbitals + jorb*num_points + idx_r];
-    d_kn[idx_r*num_orbitals*num_orbitals + iorb*num_orbitals + jorb] = make_cuDoubleComplex(value.y, -value.x); 
+    cdouble_cuda value = cuCmul(d_comm[iorb*num_points*num_orbitals + jorb*num_points + idx_r], make_cuDoubleComplex(1.0/(double)num_points,0.0));
+    d_kn[idx_r*num_orbitals*num_orbitals + iorb*num_orbitals + jorb] = cuCmul(make_cuDoubleComplex(0.0,-1.0), value); 
 }
 
 __global__ void kernel_step_rho(cdouble_cuda* d_rho, cdouble_cuda* d_k1, cdouble_cuda* d_k2, cdouble_cuda* d_k3, cdouble_cuda* d_k4, const double dt, const int num_points, const int num_orbitals){
@@ -106,8 +114,8 @@ __global__ void kernel_step_rho(cdouble_cuda* d_rho, cdouble_cuda* d_k1, cdouble
     int idx = idx_r*num_orbitals*num_orbitals + iorb * num_orbitals + jorb;
     cdouble_cuda prefac = make_cuDoubleComplex(0.1666666666666*dt, 0.0);
     cdouble_cuda tmp1 = cuCmul(make_cuDoubleComplex(1.0, 0.0), d_k1[idx]);
-    cdouble_cuda tmp2 = cuCmul(make_cuDoubleComplex(0.5, 0.0), d_k2[idx]);
-    cdouble_cuda tmp3 = cuCmul(make_cuDoubleComplex(0.5, 0.0), d_k3[idx]);
+    cdouble_cuda tmp2 = cuCmul(make_cuDoubleComplex(2.0, 0.0), d_k2[idx]);
+    cdouble_cuda tmp3 = cuCmul(make_cuDoubleComplex(2.0, 0.0), d_k3[idx]);
     cdouble_cuda tmp4 = cuCmul(make_cuDoubleComplex(1.0, 0.0), d_k4[idx]);
 
     cdouble_cuda value = d_rho[idx]; 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#define nr 400
+#define nr 10
 class Settings{
     public:
         Settings();
@@ -15,9 +15,9 @@ class Settings{
 
         double lambda_nm = 3000;
         double tmax_field = 80.0;
-        double intensity_wcm2 = 5e10;
-        double sx = 0.96;
-        double sy = 0.25;
+        double intensity_wcm2 = 1e12;
+        double sx = 0.0;
+        double sy = 1.0;
         double sz = 0.0;
         double phi_x = 0.0;
         double phi_y = 0.0;

@@ -19,6 +19,7 @@ __global__ void kernel_reorder_and_peierls_kn(cdouble_cuda prefac, cdouble_cuda*
                                               cdouble_cuda* d_heff, cdouble_cuda* d_rho,
                                               cdouble_cuda* d_peierls, const int num_points, const int num_orbitals); 
 __global__ void kernel_fftshift2D(cdouble_cuda* data, const int nr1, const int nr2, const int num_orbitals);
+__global__ void kernel_scale_inverse_fft(cdouble_cuda* data, const int num_points, const int num_orbitals);
 __global__ void kernel_update_heff(const double ex, const double ey, const double ez, cdouble_cuda* d_heff, cdouble_cuda* d_h0, cdouble_cuda* d_xbc, cdouble_cuda* d_ybc, cdouble_cuda* d_zbc, const int num_points, const int num_orbitals);
 __global__ void kernel_commutator_k(cdouble_cuda* d_comm_k, cdouble_cuda* d_heff_k, cdouble_cuda* d_rho_k, const int num_points, const int num_orbitals);
 __global__ void kernel_update_kn(cdouble_cuda* d_kn, cdouble_cuda* d_comm, const int num_points, const int num_orbitals);

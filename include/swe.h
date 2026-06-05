@@ -12,6 +12,10 @@
 #include "efield.h"
 #include "solver.h"
 #include "solver_kspace.h"
+#ifdef HAVE_CUDA
+#include <cuda_runtime.h>
+#include "solver_cuda.h"
+#endif
 #include "observable.h"
 
 class SWESim{
@@ -26,10 +30,16 @@ class SWESim{
         RDM *_rho;
         MatrixField *_diagonalization;
         Efield* _efield;
-        Solver* _solver;
         Observable* _jx;
         Observable* _jy;
         Observable* _jz;
+        #ifdef HAVE_CUDA
+        cudaStream_t* _stream;
+        int _device;
+        Solver_cuda* _solver;
+        #else
+        Solver* _solver;
+        #endif
 
         std::string _path_tb;
         
@@ -37,6 +47,10 @@ class SWESim{
         void _convert_to_au();
         void _convert_to_si();
         void _calc_peierls_phase(double ax, double ay, double az, cdouble* peierls_phase);
+        void _run_simulation_cpu();
+        #ifdef HAVE_CUDA
+        void _run_simulation_cuda();
+        #endif
     public:
         SWESim();
         SWESim(const std::string &path_tb, Settings* settings);

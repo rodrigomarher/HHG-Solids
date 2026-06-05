@@ -75,6 +75,7 @@ class Solver_cuda{
 	void _create_cufft_plan();
 	void _calculate_peierls_phase(const double ax, const double ay, const double az);
 	void _step_rho();
+	void _copy_rho_device_to_host();
     public:
         Solver_cuda();
         Solver_cuda(Settings* settings,
@@ -83,9 +84,10 @@ class Solver_cuda{
                RDM* rdm,
                BerryConnection** r_bc,
                Efield* efield,
-               WannierTB* wannier);
+               WannierTB* wannier,
+               cudaStream_t* stream);
         
-        void step_rk4(const int ti, cdouble* peierls_phase);
+        void step_rk4(const int ti);
         void init();
         ~Solver_cuda();
 };

@@ -23,10 +23,12 @@ Solver_cuda::Solver_cuda(){
 }
 
 void Solver_cuda::init(){
+    _init_device_arrays();
+    _create_cufft_plan(); 
     return;
 }
 
-Solver_cuda::Solver_cuda(Settings *settings, Grid* grid, Hamiltonian* hamiltonian, RDM* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier){
+Solver_cuda::Solver_cuda(Settings *settings, Grid* grid, Hamiltonian* hamiltonian, RDM* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier, cudaStream_t* stream){
     _settings = settings; 
     _grid = grid;
     _hamiltonian = hamiltonian;
@@ -38,9 +40,9 @@ Solver_cuda::Solver_cuda(Settings *settings, Grid* grid, Hamiltonian* hamiltonia
     _num_points = _settings->nr1 * _settings->nr2 * _settings->nr3;
     _num_orbitals = _settings->num_orb;
 
+    _stream = stream;
+
     _allocate();
-    _init_device_arrays();
-    _create_cufft_plan(); 
 }
 
 void Solver_cuda::_allocate(){
@@ -119,8 +121,7 @@ void Solver_cuda::_create_cufft_plan(){
     cufftSetStream(_cufft_plan, *_stream);
 }
 
-void Solver_cuda::step_rk4(const int ti, cdouble* peierls_phase){
-    _peierls_phase = peierls_phase;
+void Solver_cuda::step_rk4(const int ti){
     double t = _grid->t(ti);
     _dt = _grid->t()[1] - _grid->t()[0];
     double ax = 0;
@@ -196,8 +197,9 @@ void Solver_cuda::step_rk4(const int ti, cdouble* peierls_phase){
     _update_heff(ex_dt, ey_dt, ez_dt, ax_dt, ay_dt, az_dt);
     _calculate_peierls_phase(ax_dt, ay_dt, az_dt); 
     _update_k4_conv_cuda(ex_dt,  ey_dt, ez_dt, ax_dt, ay_dt, az_dt); 
-
+     
     _step_rho();
+    _copy_rho_device_to_host();
 }
 
 void Solver_cuda::_init_device_arrays(){
@@ -208,6 +210,8 @@ void Solver_cuda::_init_device_arrays(){
 
     for(int idx_r = 0; idx_r<_num_points; idx_r ++){
         memcpy(tmp + idx_r*_num_orbitals*_num_orbitals, _rho->data_ptr()[idx_r], sizeof(cdouble)*_num_orbitals*_num_orbitals);
+        //std::cout<<"tmp: "<<tmp[idx_r*_num_orbitals*_num_orbitals + 0]<<" "<<tmp[idx_r*_num_orbitals*_num_orbitals + 1]<<" "<<tmp[idx_r*_num_orbitals*_num_orbitals + 2]<<" "<<tmp[idx_r*_num_orbitals*_num_orbitals +3 ]<<std::endl;
+        //std::cout<<"rho: "<< _rho->data_ptr()[idx_r][0]<<" "<<_rho->data_ptr()[idx_r][1]<<" "<<_rho->data_ptr()[idx_r][2]<<" "<<_rho->data_ptr()[idx_r][3]<<std::endl;
     }
     checkCudaErrors(cudaMemcpyAsync(_d_rho, tmp, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, cudaMemcpyHostToDevice, *_stream));
 
@@ -283,6 +287,15 @@ void Solver_cuda::_update_k4_conv_cuda(const double ex, const double ey, const d
 void Solver_cuda::_step_rho(){
     double dt = _grid->t()[1] - _grid->t()[0];;
     call_kernel_step_rho(_d_rho, _d_k1, _d_k2, _d_k3, _d_k4, dt, _num_points, _num_orbitals, _stream);
+}
+
+void Solver_cuda::_copy_rho_device_to_host(){
+    cdouble* tmp = new cdouble[_num_points*_num_orbitals*_num_orbitals];
+    checkCudaErrors(cudaMemcpyAsync(tmp, _d_rho, sizeof(cdouble)*_num_points*_num_orbitals*_num_orbitals, cudaMemcpyDeviceToHost, *_stream));
+    checkCudaErrors(cudaStreamSynchronize(*_stream));
+    for(int idx_r = 0; idx_r<_num_points; idx_r ++){
+            memcpy(_rho->data_ptr()[idx_r],tmp + idx_r*_num_orbitals*_num_orbitals, sizeof(cdouble)*_num_orbitals*_num_orbitals);
+    }
 }
 
 void Solver_cuda::_clear_kn(){
