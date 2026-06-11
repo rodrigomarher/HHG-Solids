@@ -2,7 +2,7 @@
 #include <cuComplex.h>
 #include <cufft.h>
 #include "cuda_helpers/helper_cuda.h"
-#include "cuda_kernels.h"
+#include "kernels_solver_cuda.h"
 
 __global__ void kernel_calculate_peierls_phase(double ax, double ay, double az, cdouble_cuda* d_peierls_phase, double* d_r_vec_x, double* d_r_vec_y, double* d_r_vec_z, const int num_points){
     int idx_r = blockIdx.x*blockDim.x + threadIdx.x;

@@ -6,7 +6,7 @@ import pickle as pckl
 from mpi4py import MPI
 
 param = {"path_lib": "../build/libwannier.so",
-			 "path_tb": "../hmcase0_tb.dat",
+			 "path_tb": "../hmcase4_tb.dat",
 			 "nr1": 400,
 			 "nr2": 400,
 			 "nr3": 1,
@@ -117,7 +117,7 @@ def main():
 				"data_sim": data_sim_hhg,
 				"data_acc": data_sim_acc}
 
-		with open("hmcase0_I1e12_nk400.pckl", "wb") as f:
+		with open("hmcase4_I1e12_nk400.pckl", "wb") as f:
 			pckl.dump(data, f)
 if __name__=="__main__":
 	main()

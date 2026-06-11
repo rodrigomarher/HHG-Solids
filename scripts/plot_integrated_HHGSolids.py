@@ -5,7 +5,7 @@ import numpy as np
 filepath = 'hmcase0_I1e12_nk400.pckl'
 figname = "hmcase0_carlos_"
 #q = np.arange(3,29,1)
-q = np.array([4,9,25])
+q_max = 70
 P = 1
 import numpy as np
 import matplotlib.pyplot as plt

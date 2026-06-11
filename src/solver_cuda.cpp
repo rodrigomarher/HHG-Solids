@@ -8,7 +8,7 @@
 #include "vec3_util.h"
 #include "fftw_helper.h"
 #include "cuda_helpers/helper_cuda.h"
-#include "cuda_kernels.h"
+#include "kernels_solver_cuda.h"
 #include "solver_cuda.h"
 
 #define MOD(a, b) (((a) % (b) + (b)) % (b))

@@ -65,7 +65,7 @@ if(CUDA_FOUND)
     enable_language(CUDA)
     add_definitions(-DHAVE_CUDA)
     set(cuda_src
-	src/cuda_kernels.cu
+	src/kernels_solver_cuda.cu
 	src/solver_cuda.cpp)
     add_library(wannier_cuda ${cuda_src})
     include_directories(${CUDA_INCLUDE_DIRS})
