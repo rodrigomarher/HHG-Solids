@@ -28,7 +28,7 @@ void Solver_cuda::init(){
     return;
 }
 
-Solver_cuda::Solver_cuda(Settings *settings, Grid* grid, Hamiltonian* hamiltonian, RDM* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier, cudaStream_t* stream){
+Solver_cuda::Solver_cuda(Settings *settings, Grid* grid, Hamiltonian* hamiltonian, RDM_cuda* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier, cudaStream_t* stream){
     _settings = settings; 
     _grid = grid;
     _hamiltonian = hamiltonian;
@@ -41,7 +41,8 @@ Solver_cuda::Solver_cuda(Settings *settings, Grid* grid, Hamiltonian* hamiltonia
     _num_orbitals = _settings->num_orb;
 
     _stream = stream;
-
+    _d_rho = _rho->get_ptr_cuda();
+    
     _allocate();
 }
 
@@ -54,7 +55,7 @@ void Solver_cuda::_allocate(){
     checkCudaErrors(cudaMallocAsync((void**)&_d_xbc, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMallocAsync((void**)&_d_ybc, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMallocAsync((void**)&_d_zbc, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
-    checkCudaErrors(cudaMallocAsync((void**)&_d_rho, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
+//    checkCudaErrors(cudaMallocAsync((void**)&_d_rho, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMallocAsync((void**)&_d_heff, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMallocAsync((void**)&_d_rho_k, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMallocAsync((void**)&_d_heff_k, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
@@ -72,7 +73,7 @@ void Solver_cuda::_allocate(){
     checkCudaErrors(cudaMemsetAsync(_d_xbc, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMemsetAsync(_d_ybc, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMemsetAsync(_d_zbc, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
-    checkCudaErrors(cudaMemsetAsync(_d_rho, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
+//    checkCudaErrors(cudaMemsetAsync(_d_rho, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMemsetAsync(_d_heff, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMemsetAsync(_d_rho_k, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMemsetAsync(_d_heff_k, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
@@ -93,7 +94,7 @@ void Solver_cuda::_deallocate(){
     checkCudaErrors(cudaFreeAsync(_d_xbc, *_stream));
     checkCudaErrors(cudaFreeAsync(_d_ybc, *_stream));
     checkCudaErrors(cudaFreeAsync(_d_zbc, *_stream));
-    checkCudaErrors(cudaFreeAsync(_d_rho, *_stream));
+//    checkCudaErrors(cudaFreeAsync(_d_rho, *_stream));
     checkCudaErrors(cudaFreeAsync(_d_heff,*_stream));
     checkCudaErrors(cudaFreeAsync(_d_rho_k, *_stream));
     checkCudaErrors(cudaFreeAsync(_d_heff_k,*_stream));
@@ -199,7 +200,7 @@ void Solver_cuda::step_rk4(const int ti){
     _update_k4_conv_cuda(ex_dt,  ey_dt, ez_dt, ax_dt, ay_dt, az_dt); 
      
     _step_rho();
-    _copy_rho_device_to_host();
+    //_copy_rho_device_to_host();
 }
 
 void Solver_cuda::_init_device_arrays(){
@@ -208,12 +209,10 @@ void Solver_cuda::_init_device_arrays(){
     double* tmp_r_vec_y = new double[_num_points];
     double* tmp_r_vec_z = new double[_num_points];
 
-    for(int idx_r = 0; idx_r<_num_points; idx_r ++){
-        memcpy(tmp + idx_r*_num_orbitals*_num_orbitals, _rho->data_ptr()[idx_r], sizeof(cdouble)*_num_orbitals*_num_orbitals);
-        //std::cout<<"tmp: "<<tmp[idx_r*_num_orbitals*_num_orbitals + 0]<<" "<<tmp[idx_r*_num_orbitals*_num_orbitals + 1]<<" "<<tmp[idx_r*_num_orbitals*_num_orbitals + 2]<<" "<<tmp[idx_r*_num_orbitals*_num_orbitals +3 ]<<std::endl;
-        //std::cout<<"rho: "<< _rho->data_ptr()[idx_r][0]<<" "<<_rho->data_ptr()[idx_r][1]<<" "<<_rho->data_ptr()[idx_r][2]<<" "<<_rho->data_ptr()[idx_r][3]<<std::endl;
-    }
-    checkCudaErrors(cudaMemcpyAsync(_d_rho, tmp, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, cudaMemcpyHostToDevice, *_stream));
+//    for(int idx_r = 0; idx_r<_num_points; idx_r ++){
+//        memcpy(tmp + idx_r*_num_orbitals*_num_orbitals, _rho->data_ptr()[idx_r], sizeof(cdouble)*_num_orbitals*_num_orbitals);
+//    }
+//    checkCudaErrors(cudaMemcpyAsync(_d_rho, tmp, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, cudaMemcpyHostToDevice, *_stream));
 
     for(int idx_r = 0; idx_r<_num_points; idx_r ++){
         memcpy(tmp + idx_r*_num_orbitals*_num_orbitals, _hamiltonian->data_ptr()[idx_r], sizeof(cdouble)*_num_orbitals*_num_orbitals);
@@ -290,12 +289,13 @@ void Solver_cuda::_step_rho(){
 }
 
 void Solver_cuda::_copy_rho_device_to_host(){
-    cdouble* tmp = new cdouble[_num_points*_num_orbitals*_num_orbitals];
-    checkCudaErrors(cudaMemcpyAsync(tmp, _d_rho, sizeof(cdouble)*_num_points*_num_orbitals*_num_orbitals, cudaMemcpyDeviceToHost, *_stream));
-    checkCudaErrors(cudaStreamSynchronize(*_stream));
-    for(int idx_r = 0; idx_r<_num_points; idx_r ++){
-            memcpy(_rho->data_ptr()[idx_r],tmp + idx_r*_num_orbitals*_num_orbitals, sizeof(cdouble)*_num_orbitals*_num_orbitals);
-    }
+//    cdouble* tmp = new cdouble[_num_points*_num_orbitals*_num_orbitals];
+//    checkCudaErrors(cudaMemcpyAsync(tmp, _d_rho, sizeof(cdouble)*_num_points*_num_orbitals*_num_orbitals, cudaMemcpyDeviceToHost, *_stream));
+//    checkCudaErrors(cudaStreamSynchronize(*_stream));
+//    for(int idx_r = 0; idx_r<_num_points; idx_r ++){
+//            memcpy(_rho->data_ptr()[idx_r],tmp + idx_r*_num_orbitals*_num_orbitals, sizeof(cdouble)*_num_orbitals*_num_orbitals);
+//    }
+//    delete [] tmp;
 }
 
 void Solver_cuda::_clear_kn(){

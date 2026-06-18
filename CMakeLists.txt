@@ -66,6 +66,8 @@ if(CUDA_FOUND)
     add_definitions(-DHAVE_CUDA)
     set(cuda_src
 	src/kernels_solver_cuda.cu
+	src/kernels_rdm_cuda.cu
+	src/rdm_cuda.cpp
 	src/solver_cuda.cpp)
     add_library(wannier_cuda ${cuda_src})
     include_directories(${CUDA_INCLUDE_DIRS})

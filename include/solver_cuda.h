@@ -11,6 +11,7 @@
 #include "efield.h"
 #include "berry_connection.h"
 #include "wannier_tb.h"
+#include "rdm_cuda.h"
 
 #define cdouble_cuda cuDoubleComplex
 
@@ -20,7 +21,8 @@ class Solver_cuda{
         Settings* _settings;
         Grid* _grid;
         Hamiltonian* _hamiltonian;
-        RDM* _rho;
+        //RDM* _rho;
+	RDM_cuda* _rho;
         Efield* _efield;
         BerryConnection** _r_bc;
         WannierTB* _wannier;
@@ -81,7 +83,7 @@ class Solver_cuda{
         Solver_cuda(Settings* settings,
                Grid* grid, 
                Hamiltonian* hamiltonian,
-               RDM* rdm,
+               RDM_cuda* rdm,
                BerryConnection** r_bc,
                Efield* efield,
                WannierTB* wannier,

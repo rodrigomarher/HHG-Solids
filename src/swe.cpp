@@ -83,7 +83,8 @@ void SWESim::_init(){
     _stream = new cudaStream_t;
     checkCudaErrors(cudaSetDevice(_device));
     checkCudaErrors(cudaStreamCreate(_stream));
-    _solver = new Solver_cuda(_settings, _grid, _hamiltonian, _rho, _r_bc, _efield, _wannier, _stream);
+    _rho_cuda = new RDM_cuda(_settings, _rho, _stream); 
+    _solver = new Solver_cuda(_settings, _grid, _hamiltonian, _rho_cuda, _r_bc, _efield, _wannier, _stream);
     #else
     _solver = new Solver(_settings, _grid, _hamiltonian, _rho, _r_bc, _efield, _wannier);
     #endif
@@ -103,6 +104,9 @@ void SWESim::_init(){
     _rho->convert_to_r();
     
     _solver->init();
+    #ifdef HAVE_CUDA
+    _rho_cuda->copy_cpu_to_gpu();
+    #endif
 }
 
 void SWESim::_convert_to_au(){
@@ -208,13 +212,14 @@ void SWESim::_run_simulation_cuda(){
     cdouble* peierls_phase = new cdouble[_num_points];
     for(int ti = 0; ti<_settings->nt; ti++){
         _solver->step_rk4(ti);
-        //if(ti%10 == 0){
-        //    std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
-        //}
+        if(ti%10 == 0){
+            std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
+        }
         double ax = _efield->A_x[ti];
         double ay = _efield->A_y[ti];
         double az = _efield->A_z[ti];
         _calc_peierls_phase(ax, ay, az, peierls_phase);
+        _rho_cuda->copy_gpu_to_cpu();
         for(int idx_r = 0; idx_r<_num_points; idx_r ++){
             for(int iorb=0; iorb<_num_orbitals*_num_orbitals; iorb++){
                 cdouble rho_value = _rho->data_ptr()[idx_r][iorb];
@@ -238,9 +243,9 @@ void SWESim::_run_simulation_cpu(){
     cdouble* peierls_phase = new cdouble[_num_points];
     //Observable rho(_settings, _grid, _rho, _rho);
     for(int ti = 0; ti<_settings->nt; ti++){
-        //if(ti%10 == 0){
-        //    std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
-        //}
+        if(ti%10 == 0){
+            std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
+        }
         double ax = _efield->A_x[ti];
         double ay = _efield->A_y[ti];
         double az = _efield->A_z[ti];

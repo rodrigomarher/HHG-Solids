@@ -15,6 +15,7 @@
 #ifdef HAVE_CUDA
 #include <cuda_runtime.h>
 #include "solver_cuda.h"
+#include "rdm_cuda.h"
 #endif
 #include "observable.h"
 
@@ -37,6 +38,7 @@ class SWESim{
         cudaStream_t* _stream;
         int _device;
         Solver_cuda* _solver;
+        RDM_cuda* _rho_cuda;
         #else
         Solver* _solver;
         #endif
