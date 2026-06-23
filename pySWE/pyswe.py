@@ -60,7 +60,8 @@ class Settings:
     def __init__(self, param):
         self.path_lib = param["path_lib"]
         self.path_tb = param["path_tb"]
-        self.nt = int(param["tmax"]/param["dt"])
+        #self.nt = int(param["tmax"]/param["dt"])
+        self.nt = param["nt"]
         self.settings_swe = ct.CDLL(self.path_lib)
         self.settings_swe.Settings_new.argtypes = []
         self.settings_swe.Settings_new.restype = ct.c_void_p
@@ -72,8 +73,8 @@ class Settings:
         self.settings_swe.Settings_set_nr3.restype = ct.c_void_p
         self.settings_swe.Settings_set_tmax.argtypes = [ct.c_void_p, ct.c_double]
         self.settings_swe.Settings_set_tmax.restype = ct.c_void_p
-        self.settings_swe.Settings_set_dt.argtypes = [ct.c_void_p, ct.c_double]
-        self.settings_swe.Settings_set_dt.restype = ct.c_void_p
+        self.settings_swe.Settings_set_nt.argtypes = [ct.c_void_p, ct.c_int]
+        self.settings_swe.Settings_set_nt.restype = ct.c_void_p
         self.settings_swe.Settings_set_intensity.argtypes = [ct.c_void_p, ct.c_double]
         self.settings_swe.Settings_set_intensity.restype = ct.c_void_p
         self.settings_swe.Settings_set_lambda.argtypes = [ct.c_void_p, ct.c_double]
@@ -90,7 +91,7 @@ class Settings:
         self.settings_swe.Settings_set_nr2(self.ptr, param["nr2"])
         self.settings_swe.Settings_set_nr3(self.ptr, param["nr3"])
         self.settings_swe.Settings_set_tmax(self.ptr, param["tmax"])
-        self.settings_swe.Settings_set_dt(self.ptr, param["dt"])
+        self.settings_swe.Settings_set_nt(self.ptr, param["nt"])
         self.settings_swe.Settings_set_intensity(self.ptr, param["intensity"])
         self.settings_swe.Settings_set_lambda(self.ptr, param["lambda"])
         self.settings_swe.Settings_set_tmax_field(self.ptr, param["tmax_field"])

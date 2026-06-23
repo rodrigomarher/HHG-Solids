@@ -67,11 +67,15 @@ if(CUDA_FOUND)
     set(cuda_src
 	src/kernels_solver_cuda.cu
 	src/kernels_rdm_cuda.cu
+	src/kernels_observable_cuda.cu
 	src/rdm_cuda.cpp
+	src/observable_cuda.cpp
 	src/solver_cuda.cpp)
     add_library(wannier_cuda ${cuda_src})
     include_directories(${CUDA_INCLUDE_DIRS})
+    set_property(TARGET wannier_cuda PROPERTY CUDA_ARCHITECTURES 80)
     add_library(wannier SHARED ${wannier_src} ${cuda_src})
+    set_property(TARGET wannier PROPERTY CUDA_ARCHITECTURES 80)
 else()
     add_library(wannier SHARED ${wannier_src})
 endif()
@@ -84,7 +88,7 @@ if(CUDA_FOUND)
 			          BLAS::BLAS
 				  CUDA::cufft_static
 				  fftw3)
-    
+
     set_target_properties(wannier PROPERTIES
 		          CUDA_SEPARABLE_COMPILATION ON)
 

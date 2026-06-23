@@ -16,6 +16,7 @@
 #include <cuda_runtime.h>
 #include "solver_cuda.h"
 #include "rdm_cuda.h"
+#include "observable_cuda.h"
 #endif
 #include "observable.h"
 
@@ -39,6 +40,9 @@ class SWESim{
         int _device;
         Solver_cuda* _solver;
         RDM_cuda* _rho_cuda;
+        Observable_cuda* _jx_cuda;
+        Observable_cuda* _jy_cuda;
+        Observable_cuda* _jz_cuda;
         #else
         Solver* _solver;
         #endif

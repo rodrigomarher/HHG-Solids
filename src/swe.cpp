@@ -54,7 +54,8 @@ void SWESim::set_settings(Settings* settings){
 void SWESim::_init(){
 
     _wannier = new WannierTB(_path_tb);
-    _settings->nt = _settings->tmax/_settings->dt;
+    _settings->dt = _settings->tmax/(double)_settings->nt;
+    //_settings->nt = _settings->tmax/_settings->dt;
     _settings->path_tb = _path_tb;
     _settings->num_orb = _wannier->num_orb;
     _settings->num_sites = _wannier->num_sites;
@@ -84,6 +85,9 @@ void SWESim::_init(){
     checkCudaErrors(cudaSetDevice(_device));
     checkCudaErrors(cudaStreamCreate(_stream));
     _rho_cuda = new RDM_cuda(_settings, _rho, _stream); 
+    _jx_cuda = new Observable_cuda(_settings, _grid, _rho_cuda, _v[0], _stream);
+    _jy_cuda = new Observable_cuda(_settings, _grid, _rho_cuda, _v[1], _stream);
+    _jz_cuda = new Observable_cuda(_settings, _grid, _rho_cuda, _v[2], _stream);
     _solver = new Solver_cuda(_settings, _grid, _hamiltonian, _rho_cuda, _r_bc, _efield, _wannier, _stream);
     #else
     _solver = new Solver(_settings, _grid, _hamiltonian, _rho, _r_bc, _efield, _wannier);
@@ -105,6 +109,9 @@ void SWESim::_init(){
     
     _solver->init();
     #ifdef HAVE_CUDA
+    _jx_cuda->init_device();
+    _jy_cuda->init_device();
+    _jz_cuda->init_device();
     _rho_cuda->copy_cpu_to_gpu();
     #endif
 }
@@ -210,6 +217,7 @@ void SWESim::_run_simulation_cuda(){
     int _num_points  =_settings->nr1*_settings->nr2*_settings->nr3;
     int _num_orbitals = _settings->num_orb;
     cdouble* peierls_phase = new cdouble[_num_points];
+    std::cout<<"[CUDA_SOLVER]"<<std::endl;
     for(int ti = 0; ti<_settings->nt; ti++){
         _solver->step_rk4(ti);
         if(ti%10 == 0){
@@ -218,21 +226,28 @@ void SWESim::_run_simulation_cuda(){
         double ax = _efield->A_x[ti];
         double ay = _efield->A_y[ti];
         double az = _efield->A_z[ti];
-        _calc_peierls_phase(ax, ay, az, peierls_phase);
-        _rho_cuda->copy_gpu_to_cpu();
-        for(int idx_r = 0; idx_r<_num_points; idx_r ++){
-            for(int iorb=0; iorb<_num_orbitals*_num_orbitals; iorb++){
-                cdouble rho_value = _rho->data_ptr()[idx_r][iorb];
-                _rho->set(rho_value*std::conj(peierls_phase[idx_r]), idx_r, iorb);
-                //if(rho_value.real()!=0 || rho_value.imag()!=0){
-                //    std::cout<<"idx_r: "<<idx_r<< ", iorb:  "<<iorb<<" jorb: "<<rho_value<<std::endl;
-                //}
-            }
-        }
-        _jx->calculate();
-        _jy->calculate();
-        _jz->calculate();
+        //_calc_peierls_phase(ax, ay, az, peierls_phase);
+        //_rho_cuda->copy_gpu_to_cpu();
+        //for(int idx_r = 0; idx_r<_num_points; idx_r ++){
+        //    for(int iorb=0; iorb<_num_orbitals*_num_orbitals; iorb++){
+        //        cdouble rho_value = _rho->data_ptr()[idx_r][iorb];
+        //        _rho->set(rho_value*std::conj(peierls_phase[idx_r]), idx_r, iorb);
+        //        //if(rho_value.real()!=0 || rho_value.imag()!=0){
+        //        //    std::cout<<"idx_r: "<<idx_r<< ", iorb:  "<<iorb<<" jorb: "<<rho_value<<std::endl;
+        //        //}
+        //    }
+        //}
+        //
+        //_jx->calculate();
+        //_jy->calculate();
+        //_jz->calculate();
+        _jx_cuda->calculate(ti, ax, ay, az);
+        _jy_cuda->calculate(ti, ax, ay, az);
+        _jz_cuda->calculate(ti, ax, ay, az);
     }
+    _jx_cuda->copy_device_to_host();
+    _jy_cuda->copy_device_to_host();
+    _jz_cuda->copy_device_to_host();
     delete[] peierls_phase;
 }
 #else
@@ -290,16 +305,38 @@ void SWESim::_calc_peierls_phase(double ax, double ay, double az, cdouble* peier
 }
 
 void SWESim::get_current(double* time, cdouble* jx, cdouble* jy, cdouble* jz){
+    #ifdef HAVE_CUDA
+    for(int ti = 0; ti < _settings->nt; ti++){
+        time[ti] = _grid->t()[ti];
+        jx[ti] = _jx_cuda->get_ptr()[ti];
+        jy[ti] = _jy_cuda->get_ptr()[ti];
+        jz[ti] = _jz_cuda->get_ptr()[ti];
+        //jx[ti] = _jx->get_ptr()[ti];
+        //jy[ti] = _jy->get_ptr()[ti];
+        //jz[ti] = _jz->get_ptr()[ti];
+    }
+    #else
     for(int ti = 0; ti < _settings->nt; ti++){
         time[ti] = _grid->t()[ti];
         jx[ti] = _jx->get_ptr()[ti];
         jy[ti] = _jy->get_ptr()[ti];
         jz[ti] = _jz->get_ptr()[ti];
     }    
+    #endif
 }
 
 void SWESim::save_current(const std::string &path){
     std::ostringstream oss;
+    #ifdef HAVE_CUDA
+    oss << path<<"/jx.dat";
+    _jx_cuda->write(oss.str());
+    oss.str("");
+    oss << path<<"/jy.dat";
+    _jy_cuda->write(oss.str());
+    oss.str("");
+    oss << path<<"/jz.dat";
+    _jz_cuda->write(oss.str());
+    #else
     oss << path<<"/jx.dat";
     _jx->write(oss.str());
     oss.str("");
@@ -308,7 +345,7 @@ void SWESim::save_current(const std::string &path){
     oss.str("");
     oss << path<<"/jz.dat";
     _jz->write(oss.str());
-
+    #endif
 }
 
 SWESim::~SWESim(){
@@ -330,6 +367,10 @@ SWESim::~SWESim(){
     delete _hamiltonian;
     #ifdef HAVE_CUDA
     cudaSetDevice(_device);
+    delete _jx_cuda;
+    delete _jy_cuda;
+    delete _jz_cuda;
+    delete _rho_cuda;
     cudaStreamDestroy(*_stream);
     #endif
 }

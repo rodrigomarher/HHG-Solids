@@ -10,8 +10,8 @@ class Settings{
         int nr3 = 1;
         
         double tmax = 90.0;
-        double dt = 10.98e-3/0.5;
-        int nt = tmax/dt;
+        int nt = 4096;
+        double dt = tmax/(double)dt;
 
         double lambda_nm = 3000;
         double tmax_field = 80.0;

@@ -19,7 +19,7 @@ extern "C"{
     void Settings_set_nr2(Settings* s, int val){s->nr2 = val;}
     void Settings_set_nr3(Settings* s, int val){s->nr3 = val;}
     void Settings_set_tmax(Settings* s, double val){s->tmax = val;} 
-    void Settings_set_dt(Settings* s, double val){s->dt = val;}
+    void Settings_set_nt(Settings* s, int val){s->nt = val;}
     void Settings_set_intensity(Settings* s, double val){s->intensity_wcm2 = val;}
     void Settings_set_lambda(Settings* s, double val){s->lambda_nm = val;}
     void Settings_set_tmax_field(Settings* s, double val){s->tmax_field = val;}

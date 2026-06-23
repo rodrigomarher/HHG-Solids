@@ -15,8 +15,8 @@ Observable::Observable(Settings* settings, Grid* grid, RDM* rho, Operator* op){
 
 void Observable::calculate(){
     cdouble sum = {0.0,0.0};
-    for (int idx_r_1 = _settings->nr1/2 - 2; idx_r_1 < _settings->nr1/2 + 2; idx_r_1++){
-        for (int idx_r_2 = _settings->nr2/2 -2; idx_r_2 < _settings->nr2/2 +2; idx_r_2++){
+    for (int idx_r_1 = 0; idx_r_1 < _settings->nr1; idx_r_1++){
+        for (int idx_r_2 = 0; idx_r_2 < _settings->nr2; idx_r_2++){
             for(int iorb = 0; iorb < _num_orbitals; iorb++){
                 for(int jorb = 0; jorb< _num_orbitals; jorb++){
                     cdouble value = _operator->data_ptr()[idx_r_1*_settings->nr2 + idx_r_2][iorb*_num_orbitals + jorb];
