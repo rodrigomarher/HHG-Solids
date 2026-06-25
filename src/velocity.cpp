@@ -99,7 +99,7 @@ void Velocity::setup(Hamiltonian* ham, BerryConnection* rbc, const int axis){
             ifftshift(tmp_1, _settings->nr1, _settings->nr2); 
             for(int idx_r = 0; idx_r < _numpoints; idx_r++){
                 double r0 = _grid->Rvecs(idx_r)[axis];
-                _matrix->set(cdouble(0.0,1.0)*(1.0*r0*ham->data_ptr()[idx_r][iorb*_num_orbitals + jorb] - 1.0*tmp_1[idx_r]), idx_r, iorb*_num_orbitals + jorb);
+                _matrix->set(cdouble(0.0,1.0)*(1.0*r0*ham->data_ptr()[idx_r][iorb*_num_orbitals + jorb] + 1.0*tmp_1[idx_r]), idx_r, iorb*_num_orbitals + jorb);
             }
         }
     }

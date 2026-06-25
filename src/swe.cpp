@@ -21,22 +21,28 @@ SWESim::SWESim(const std::string &path_tb, Settings* settings){
 }
 
 void SWESim::restart(){
-    delete _rho;
-    delete _r_bc[0];
-    delete _r_bc[1];
-    delete _r_bc[2];
-    delete _v[0];
-    delete _v[1];
-    delete _v[2];
-    delete _diagonalization;
-    delete _solver;
-    delete _wannier;
-    delete _grid;
-    delete _efield;
-    delete _jx;
-    delete _jy;
-    delete _jz;
-    _init();
+    //delete _rho;
+    //delete _r_bc[0];
+    //delete _r_bc[1];
+    //delete _r_bc[2];
+    //delete _v[0];
+    //delete _v[1];
+    //delete _v[2];
+    //delete _diagonalization;
+    //delete _solver;
+    //delete _wannier;
+    //delete _grid;
+    //delete _efield;
+    //delete _jx;
+    //delete _jy;
+    //delete _jz;
+    #ifdef HAVE_CUDA
+    _solver->init();
+    _jx_cuda->init_device();
+    _jy_cuda->init_device();
+    _jz_cuda->init_device();
+    _rho_cuda->copy_cpu_to_gpu();
+    #endif
 }
 
 void SWESim::init(){
