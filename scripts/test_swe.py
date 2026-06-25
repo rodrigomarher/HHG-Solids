@@ -38,14 +38,6 @@ mask_j = np.array([1 if ti<tstart else (np.exp(-(ti-tstart)**2/200**2))**1 for t
 acc_x = np.gradient(mask_j*jx, dt)
 acc_y = np.gradient(mask_j*jy, dt)
 
-fig =plt.figure()
-ax = fig.add_subplot(1,1,1)
-ax.plot(t, mask_j, color='k', alpha=0.7)
-ax2 = ax.twinx()
-ax.plot(t, jx)
-ax.plot(t, jy)
-plt.savefig("test_swe_mask.png")
-
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
 ax.plot(np.abs(np.fft.rfft(acc_x.real))**2 + np.abs(np.fft.rfft(acc_y.real))**2)

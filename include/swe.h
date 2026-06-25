@@ -69,5 +69,8 @@ class SWESim{
         void restart(); 
         void get_current(double* t, cdouble* jx, cdouble* jy, cdouble* jz);
         void save_current(const std::string &path);
+        #ifdef HAVE_CUDA
+        void set_cuda_stream(cudaStream_t* stream);
+        #endif
         ~SWESim();
 };

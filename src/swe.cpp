@@ -17,7 +17,7 @@ SWESim::SWESim(const std::string &path_tb, Settings_swe* settings_swe){
     _path_tb = path_tb;
     _unit_system = SI;
     _settings_swe = settings_swe;
-    _init();        
+//    _init();        
 }
 
 void SWESim::restart(){
@@ -58,7 +58,7 @@ void SWESim::set_settings_swe(Settings_swe* settings_swe){
 }
 
 void SWESim::_init(){
-
+    std::cout<<"Inside init"<<std::endl;
     _wannier = new WannierTB(_path_tb);
     _settings_swe->dt = _settings_swe->tmax/(double)_settings_swe->nt;
     //_settings_swe->nt = _settings_swe->tmax/_settings_swe->dt;
@@ -86,10 +86,10 @@ void SWESim::_init(){
     _jz = new Observable(_settings_swe, _grid, _rho, _v[2]);
 
     #ifdef HAVE_CUDA
-    _device = 0;
-    _stream = new cudaStream_t;
-    checkCudaErrors(cudaSetDevice(_device));
-    checkCudaErrors(cudaStreamCreate(_stream));
+    //_device = 0;
+    //_stream = new cudaStream_t;
+    //checkCudaErrors(cudaSetDevice(_device));
+    //checkCudaErrors(cudaStreamCreate(_stream));
     _rho_cuda = new RDM_cuda(_settings_swe, _rho, _stream); 
     _jx_cuda = new Observable_cuda(_settings_swe, _grid, _rho_cuda, _v[0], _stream);
     _jy_cuda = new Observable_cuda(_settings_swe, _grid, _rho_cuda, _v[1], _stream);
@@ -213,6 +213,13 @@ void SWESim::test_files(){
 void SWESim::update_field(double *ex, double *ey, double *ez){
     _efield->init_fields(ex, ey, ez);
 }
+
+#ifdef HAVE_CUDA
+void SWESim::set_cuda_stream(cudaStream_t* stream){
+    std::cout<<"Inside set_cuda_stream"<<std::endl;
+    _stream = stream;
+}
+#endif
 
 void SWESim::run_simulation(){
     #ifdef HAVE_CUDA
@@ -376,11 +383,11 @@ SWESim::~SWESim(){
     delete _jz;
     delete _hamiltonian;
     #ifdef HAVE_CUDA
-    cudaSetDevice(_device);
+    //cudaSetDevice(_device);
     delete _jx_cuda;
     delete _jy_cuda;
     delete _jz_cuda;
     delete _rho_cuda;
-    cudaStreamDestroy(*_stream);
+    //cudaStreamDestroy(*_stream);
     #endif
 }

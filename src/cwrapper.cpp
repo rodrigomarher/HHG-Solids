@@ -2,14 +2,29 @@
 #include "swe.h"
 #include "settings_swe.h"
 
+#ifdef HAVE_CUDA
+#include <cuda_runtime.h>
+#include "cuda_helpers/helper_cuda.h"
+#endif
 extern "C"{
 //    SWESim* SWESim_new(char* path_tb, Settings_swe* settings_swe){std::string str(path_tb); return new SWESim(str, settings_swe);}
     SWESim* SWESim_new(){return new SWESim();}
-    void SWESim_run_simulation(SWESim* swe){swe->run_simulation();}
+    void SWESim_run_simulation(SWESim* swe){
+        swe->run_simulation();
+    }
     void SWESim_test_files(SWESim* swe){swe->test_files();}
     void SWESim_set_path_tb(SWESim* swe, char* path_tb){std::string str(path_tb); swe->set_path_tb(str);}
     void SWESim_set_settings_swe(SWESim* swe, Settings_swe* settings_swe){swe->set_settings_swe(settings_swe);}
-    void SWESim_init(SWESim* swe){swe->init();}
+    void SWESim_init(SWESim* swe){
+        #ifdef HAVE_CUDA
+            int device =0;
+            cudaStream_t* stream = new cudaStream_t;
+            cudaSetDevice(device);
+            checkCudaErrors(cudaStreamCreate(stream));
+            swe->set_cuda_stream(stream);
+        #endif
+        swe->init();
+    }
     void SWESim_restart(SWESim* swe){swe->restart();}
     void SWESim_get_current(SWESim* swe, double* t , cdouble* jx, cdouble* jy, cdouble* jz){swe->get_current(t, jx, jy, jz);}
     void SWESim_delete(SWESim* swe){delete swe;}
