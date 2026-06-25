@@ -28,8 +28,8 @@ def calculate(pol_angle):
 	dt = param["dt"]
 	print("python ", param["pol_vec"], flush=True)
 
-	settings = Settings(param)
-	swe = SWE(settings)
+	settings_swe = Settings(param)
+	swe = SWE(settings_swe)
 	swe.run_simulation()
 	t, jx, jy, jz = swe.get_current()
 	swe.delete()

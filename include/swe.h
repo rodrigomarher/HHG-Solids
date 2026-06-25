@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "settings.h"
+#include "settings_swe.h"
 #include "grid.h"
 #include "wannier_tb.h"
 #include "operator.h"
@@ -23,7 +23,7 @@
 class SWESim{
     private:
         int _unit_system;
-        Settings *_settings;
+        Settings_swe *_settings_swe;
         Grid *_grid;
         WannierTB *_wannier;
         Hamiltonian *_hamiltonian;
@@ -59,12 +59,12 @@ class SWESim{
         #endif
     public:
         SWESim();
-        SWESim(const std::string &path_tb, Settings* settings);
+        SWESim(const std::string &path_tb, Settings_swe* settings_swe);
         void update_field(double *ex, double *ey, double *ez);
         void run_simulation();
         void test_files(); 
         void set_path_tb(const std::string &path_tb);
-        void set_settings(Settings* settings);
+        void set_settings_swe(Settings_swe* settings_swe);
         void init();
         void restart(); 
         void get_current(double* t, cdouble* jx, cdouble* jy, cdouble* jz);

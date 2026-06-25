@@ -1,6 +1,6 @@
 #pragma once
 #include "constants.h"
-#include "settings.h"
+#include "settings_swe.h"
 #include "grid.h"
 
 class Efield{
@@ -14,7 +14,7 @@ class Efield{
         double _svec[3];
        
         Grid* _grid; 
-        Settings* _settings;
+        Settings_swe* _settings_swe;
 
         void _allocate();
         double _env_sin2(double ti);
@@ -26,7 +26,7 @@ class Efield{
         double *A_y;
         double *A_z;
 
-        Efield(Settings* settings, Grid* grid, int unit_system);
+        Efield(Settings_swe* settings_swe, Grid* grid, int unit_system);
         int unit_system();
         void convert_to_si();
         void convert_to_au();

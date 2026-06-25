@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import time
 import sys
 sys.path.append("../pySWE")
-from pyswe import Settings, SWE
+from pyswe import Settings_swe, SWE
 
 param = {"path_lib": "../build/libwannier.so",
 	 "path_tb": "../hmcase0_tb.dat",
@@ -18,9 +18,9 @@ param = {"path_lib": "../build/libwannier.so",
      "pol_vec": np.array([0.0, 1.0, 0.0]),
      "phi_vec": np.array([0.0, 0.0, 0.0])}
 
-settings = Settings(param)
+settings_swe = Settings_swe(param)
 
-swe = SWE(settings)
+swe = SWE(settings_swe)
 swe.run_simulation()
 
 swe.restart()

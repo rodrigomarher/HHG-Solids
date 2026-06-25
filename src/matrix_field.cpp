@@ -4,10 +4,10 @@
 
 #include "matrix_field.h"
 
-MatrixField::MatrixField (Settings *settings, WannierTB *wannier){
-    _settings = settings;  _wannier = wannier;
-    _numpoints = settings->nr1*_settings->nr2*_settings->nr3;
-    _num_orbitals = settings->num_orb;
+MatrixField::MatrixField (Settings_swe *settings_swe, WannierTB *wannier){
+    _settings_swe = settings_swe;  _wannier = wannier;
+    _numpoints = settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3;
+    _num_orbitals = settings_swe->num_orb;
     _alloc_matrix();
     _unit_system = _wannier->unit_system();
     

@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include <cuComplex.h>
 #include <cufft.h>
-#include "settings.h"
+#include "settings_swe.h"
 #include "grid.h"
 #include "hamiltonian.h"
 #include "rdm.h"
@@ -18,7 +18,7 @@
 
 class Solver_cuda{
     private:
-        Settings* _settings;
+        Settings_swe* _settings_swe;
         Grid* _grid;
         Hamiltonian* _hamiltonian;
         //RDM* _rho;
@@ -80,7 +80,7 @@ class Solver_cuda{
 	void _copy_rho_device_to_host();
     public:
         Solver_cuda();
-        Solver_cuda(Settings* settings,
+        Solver_cuda(Settings_swe* settings_swe,
                Grid* grid, 
                Hamiltonian* hamiltonian,
                RDM_cuda* rdm,

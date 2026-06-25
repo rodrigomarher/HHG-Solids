@@ -6,13 +6,13 @@
 #include "vec3_util.h"
 #include "fftw_helper.h"
 
-Operator::Operator(Settings* settings,Grid* grid,  WannierTB *wannier, int gauge, int space_type){
+Operator::Operator(Settings_swe* settings_swe,Grid* grid,  WannierTB *wannier, int gauge, int space_type){
     _gauge = gauge; _unit_system = wannier->unit_system(); _space_type = space_type;
-    _settings = settings; _wannier = wannier; _grid = grid; 
-    _numpoints = settings->nr1*settings->nr2*_settings->nr3;
-    _num_orbitals = settings->num_orb;
+    _settings_swe = settings_swe; _wannier = wannier; _grid = grid; 
+    _numpoints = settings_swe->nr1*settings_swe->nr2*_settings_swe->nr3;
+    _num_orbitals = settings_swe->num_orb;
     
-    _matrix = new MatrixField(settings, wannier);
+    _matrix = new MatrixField(settings_swe, wannier);
 }
 
 int Operator::unit_system(){
@@ -45,12 +45,12 @@ void Operator::convert_to_k(){
     cdouble* tmp1 = new cdouble[_numpoints];
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_numpoints);
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_numpoints);
-    fftw_plan forward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan forward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
     for(int iorb = 0; iorb<_num_orbitals*_num_orbitals; iorb++){
         for(int idx_r = 0; idx_r <_numpoints; idx_r++){
             tmp1[idx_r] = _matrix->get(idx_r,iorb);           
         }
-        ifftshift(tmp1, _settings->nr1, _settings->nr2);
+        ifftshift(tmp1, _settings_swe->nr1, _settings_swe->nr2);
         fft3(tmp1, in, out, _numpoints, forward);
         for(int idx_k = 0; idx_k< _numpoints; idx_k++){
             _matrix->set(tmp1[idx_k], idx_k, iorb);
@@ -70,13 +70,13 @@ void Operator::convert_to_r(){
     cdouble* tmp1 = new cdouble[_numpoints];
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_numpoints);
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_numpoints);
-    fftw_plan backward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan backward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
     for(int iorb = 0; iorb<_num_orbitals*_num_orbitals; iorb++){
         for(int idx_k = 0; idx_k <_numpoints; idx_k++){
             tmp1[idx_k] = _matrix->get(idx_k,iorb);           
         }
         ifft3(tmp1, in, out, _numpoints, backward);
-        ifftshift(tmp1, _settings->nr1, _settings->nr2);
+        ifftshift(tmp1, _settings_swe->nr1, _settings_swe->nr2);
         for(int idx_r = 0; idx_r< _numpoints; idx_r++){
             _matrix->set(tmp1[idx_r], idx_r, iorb);
         }

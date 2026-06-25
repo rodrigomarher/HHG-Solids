@@ -13,10 +13,10 @@
 
 SWESim::SWESim(){}
 
-SWESim::SWESim(const std::string &path_tb, Settings* settings){
+SWESim::SWESim(const std::string &path_tb, Settings_swe* settings_swe){
     _path_tb = path_tb;
     _unit_system = SI;
-    _settings = settings;
+    _settings_swe = settings_swe;
     _init();        
 }
 
@@ -53,50 +53,50 @@ void SWESim::set_path_tb(const std::string &path_tb){
     _path_tb = path_tb;
 }
 
-void SWESim::set_settings(Settings* settings){
-    _settings = settings;
+void SWESim::set_settings_swe(Settings_swe* settings_swe){
+    _settings_swe = settings_swe;
 }
 
 void SWESim::_init(){
 
     _wannier = new WannierTB(_path_tb);
-    _settings->dt = _settings->tmax/(double)_settings->nt;
-    //_settings->nt = _settings->tmax/_settings->dt;
-    _settings->path_tb = _path_tb;
-    _settings->num_orb = _wannier->num_orb;
-    _settings->num_sites = _wannier->num_sites;
+    _settings_swe->dt = _settings_swe->tmax/(double)_settings_swe->nt;
+    //_settings_swe->nt = _settings_swe->tmax/_settings_swe->dt;
+    _settings_swe->path_tb = _path_tb;
+    _settings_swe->num_orb = _wannier->num_orb;
+    _settings_swe->num_sites = _wannier->num_sites;
 
-    _grid = new Grid(_settings, _wannier);
-    _hamiltonian = new Hamiltonian(_settings, _grid, _wannier, WGAUGE, RSPACE);
-    _rho = new RDM(_settings, _grid, _wannier, WGAUGE, RSPACE);
-    _r_bc[0] = new BerryConnection(_settings, _grid, _wannier, WGAUGE, RSPACE , XAXIS);
-    _r_bc[1] = new BerryConnection(_settings, _grid, _wannier, WGAUGE, RSPACE , YAXIS);
-    _r_bc[2] = new BerryConnection(_settings, _grid, _wannier, WGAUGE, RSPACE , ZAXIS);
-    _v[0] = new Velocity(_settings, _grid, _wannier, WGAUGE, RSPACE);
-    _v[1] = new Velocity(_settings, _grid, _wannier, WGAUGE, RSPACE);
-    _v[2] = new Velocity(_settings, _grid, _wannier, WGAUGE, RSPACE);
+    _grid = new Grid(_settings_swe, _wannier);
+    _hamiltonian = new Hamiltonian(_settings_swe, _grid, _wannier, WGAUGE, RSPACE);
+    _rho = new RDM(_settings_swe, _grid, _wannier, WGAUGE, RSPACE);
+    _r_bc[0] = new BerryConnection(_settings_swe, _grid, _wannier, WGAUGE, RSPACE , XAXIS);
+    _r_bc[1] = new BerryConnection(_settings_swe, _grid, _wannier, WGAUGE, RSPACE , YAXIS);
+    _r_bc[2] = new BerryConnection(_settings_swe, _grid, _wannier, WGAUGE, RSPACE , ZAXIS);
+    _v[0] = new Velocity(_settings_swe, _grid, _wannier, WGAUGE, RSPACE);
+    _v[1] = new Velocity(_settings_swe, _grid, _wannier, WGAUGE, RSPACE);
+    _v[2] = new Velocity(_settings_swe, _grid, _wannier, WGAUGE, RSPACE);
     _v[0]->setup(_hamiltonian, _r_bc[0], XAXIS);
     _v[1]->setup(_hamiltonian, _r_bc[1], YAXIS);
     _v[2]->setup(_hamiltonian, _r_bc[2], ZAXIS);
-    _diagonalization = new MatrixField(_settings, _wannier);
-    _efield = new Efield(_settings, _grid, _unit_system);
+    _diagonalization = new MatrixField(_settings_swe, _wannier);
+    _efield = new Efield(_settings_swe, _grid, _unit_system);
 
-    _jx = new Observable(_settings, _grid, _rho, _v[0]);
-    _jy = new Observable(_settings, _grid, _rho, _v[1]);
-    _jz = new Observable(_settings, _grid, _rho, _v[2]);
+    _jx = new Observable(_settings_swe, _grid, _rho, _v[0]);
+    _jy = new Observable(_settings_swe, _grid, _rho, _v[1]);
+    _jz = new Observable(_settings_swe, _grid, _rho, _v[2]);
 
     #ifdef HAVE_CUDA
     _device = 0;
     _stream = new cudaStream_t;
     checkCudaErrors(cudaSetDevice(_device));
     checkCudaErrors(cudaStreamCreate(_stream));
-    _rho_cuda = new RDM_cuda(_settings, _rho, _stream); 
-    _jx_cuda = new Observable_cuda(_settings, _grid, _rho_cuda, _v[0], _stream);
-    _jy_cuda = new Observable_cuda(_settings, _grid, _rho_cuda, _v[1], _stream);
-    _jz_cuda = new Observable_cuda(_settings, _grid, _rho_cuda, _v[2], _stream);
-    _solver = new Solver_cuda(_settings, _grid, _hamiltonian, _rho_cuda, _r_bc, _efield, _wannier, _stream);
+    _rho_cuda = new RDM_cuda(_settings_swe, _rho, _stream); 
+    _jx_cuda = new Observable_cuda(_settings_swe, _grid, _rho_cuda, _v[0], _stream);
+    _jy_cuda = new Observable_cuda(_settings_swe, _grid, _rho_cuda, _v[1], _stream);
+    _jz_cuda = new Observable_cuda(_settings_swe, _grid, _rho_cuda, _v[2], _stream);
+    _solver = new Solver_cuda(_settings_swe, _grid, _hamiltonian, _rho_cuda, _r_bc, _efield, _wannier, _stream);
     #else
-    _solver = new Solver(_settings, _grid, _hamiltonian, _rho, _r_bc, _efield, _wannier);
+    _solver = new Solver(_settings_swe, _grid, _hamiltonian, _rho, _r_bc, _efield, _wannier);
     #endif
 
     _convert_to_au(); 
@@ -224,14 +224,14 @@ void SWESim::run_simulation(){
 
 #ifdef HAVE_CUDA
 void SWESim::_run_simulation_cuda(){
-    int _num_points  =_settings->nr1*_settings->nr2*_settings->nr3;
-    int _num_orbitals = _settings->num_orb;
+    int _num_points  =_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3;
+    int _num_orbitals = _settings_swe->num_orb;
     cdouble* peierls_phase = new cdouble[_num_points];
     std::cout<<"[CUDA_SOLVER]"<<std::endl;
-    for(int ti = 0; ti<_settings->nt; ti++){
+    for(int ti = 0; ti<_settings_swe->nt; ti++){
         _solver->step_rk4(ti);
         if(ti%10 == 0){
-            std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
+            std::cout<<"\t Progress: " << ((double)ti/(double)_settings_swe->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
         }
         double ax = _efield->A_x[ti];
         double ay = _efield->A_y[ti];
@@ -263,13 +263,13 @@ void SWESim::_run_simulation_cuda(){
 #else
 
 void SWESim::_run_simulation_cpu(){
-    int _num_points  =_settings->nr1*_settings->nr2*_settings->nr3;
-    int _num_orbitals = _settings->num_orb;
+    int _num_points  =_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3;
+    int _num_orbitals = _settings_swe->num_orb;
     cdouble* peierls_phase = new cdouble[_num_points];
-    //Observable rho(_settings, _grid, _rho, _rho);
-    for(int ti = 0; ti<_settings->nt; ti++){
+    //Observable rho(_settings_swe, _grid, _rho, _rho);
+    for(int ti = 0; ti<_settings_swe->nt; ti++){
         if(ti%10 == 0){
-            std::cout<<"\t Progress: " << ((double)ti/(double)_settings->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
+            std::cout<<"\t Progress: " << ((double)ti/(double)_settings_swe->nt)*100<<std::setprecision(3)<<" %\r"<<std::flush;
         }
         double ax = _efield->A_x[ti];
         double ay = _efield->A_y[ti];
@@ -299,13 +299,13 @@ void SWESim::_run_simulation_cpu(){
         }
     }
     //oss.str("");
-    //oss << _settings->path_results<<"/rho.dat";
+    //oss << _settings_swe->path_results<<"/rho.dat";
     //rho.write(oss.str());
     delete[] peierls_phase;
 }
 #endif
 void SWESim::_calc_peierls_phase(double ax, double ay, double az, cdouble* peierls_phase){
-    int _num_points  =_settings->nr1*_settings->nr2*_settings->nr3;
+    int _num_points  =_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3;
     for(int idx_r = 0; idx_r<_num_points; idx_r++){
         cdouble phase = std::exp(cdouble(0.0,+ax*_grid->Rvecs(idx_r)[0]
                                              +ay*_grid->Rvecs(idx_r)[1]
@@ -316,7 +316,7 @@ void SWESim::_calc_peierls_phase(double ax, double ay, double az, cdouble* peier
 
 void SWESim::get_current(double* time, cdouble* jx, cdouble* jy, cdouble* jz){
     #ifdef HAVE_CUDA
-    for(int ti = 0; ti < _settings->nt; ti++){
+    for(int ti = 0; ti < _settings_swe->nt; ti++){
         time[ti] = _grid->t()[ti];
         jx[ti] = _jx_cuda->get_ptr()[ti];
         jy[ti] = _jy_cuda->get_ptr()[ti];
@@ -326,7 +326,7 @@ void SWESim::get_current(double* time, cdouble* jx, cdouble* jy, cdouble* jz){
         //jz[ti] = _jz->get_ptr()[ti];
     }
     #else
-    for(int ti = 0; ti < _settings->nt; ti++){
+    for(int ti = 0; ti < _settings_swe->nt; ti++){
         time[ti] = _grid->t()[ti];
         jx[ti] = _jx->get_ptr()[ti];
         jy[ti] = _jy->get_ptr()[ti];

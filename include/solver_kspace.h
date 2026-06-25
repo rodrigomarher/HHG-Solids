@@ -1,6 +1,6 @@
 #pragma once
 
-#include "settings.h"
+#include "settings_swe.h"
 #include "grid.h"
 #include "hamiltonian.h"
 #include "rdm.h"
@@ -10,7 +10,7 @@
 
 class Solver_kspace{
     private:
-        Settings* _settings;
+        Settings_swe* _settings_swe;
         Grid* _grid;
         Hamiltonian* _hamiltonian;
         RDM* _rho;
@@ -52,7 +52,7 @@ class Solver_kspace{
         void _fill_aux_data();
     public:
         Solver_kspace();
-        Solver_kspace(Settings* settings,
+        Solver_kspace(Settings_swe* settings_swe,
                Grid* grid, 
                Hamiltonian* hamiltonian,
                RDM* rdm,

@@ -1,14 +1,14 @@
 #pragma once
 
 #include <cmath>
-#include "settings.h"
+#include "settings_swe.h"
 #include "wannier_tb.h"
 #include "constants.h"
 
 class Grid{
     private:
         int _unit_system;
-        const Settings *_settings;
+        const Settings_swe *_settings_swe;
         const WannierTB *_wannier;
         int *_n1, *_n2, *_n3;
         int *_m1, *_m2, *_m3;
@@ -22,7 +22,7 @@ class Grid{
         void _setup_grid();
     public:
         Grid();
-        Grid(Settings *settings, WannierTB *wannier); 
+        Grid(Settings_swe *settings_swe, WannierTB *wannier); 
         int unit_system();
         double get_r(int idx);
         double get_k(int idx);

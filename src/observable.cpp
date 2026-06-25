@@ -2,25 +2,25 @@
 #include <iostream>
 #include "observable.h"
 
-Observable::Observable(Settings* settings, Grid* grid, RDM* rho, Operator* op){
+Observable::Observable(Settings_swe* settings_swe, Grid* grid, RDM* rho, Operator* op){
     _unit_system = grid->unit_system();
-    _settings = settings;
+    _settings_swe = settings_swe;
     _grid = grid;
     _rho = rho;
     _operator = op;
-    _num_points = settings->nr1 * settings->nr2 * settings->nr3;
-    _num_orbitals = settings->num_orb;
+    _num_points = settings_swe->nr1 * settings_swe->nr2 * settings_swe->nr3;
+    _num_orbitals = settings_swe->num_orb;
     _data = new std::vector<cdouble>();
 }
 
 void Observable::calculate(){
     cdouble sum = {0.0,0.0};
-    for (int idx_r_1 = 0; idx_r_1 < _settings->nr1; idx_r_1++){
-        for (int idx_r_2 = 0; idx_r_2 < _settings->nr2; idx_r_2++){
+    for (int idx_r_1 = 0; idx_r_1 < _settings_swe->nr1; idx_r_1++){
+        for (int idx_r_2 = 0; idx_r_2 < _settings_swe->nr2; idx_r_2++){
             for(int iorb = 0; iorb < _num_orbitals; iorb++){
                 for(int jorb = 0; jorb< _num_orbitals; jorb++){
-                    cdouble value = _operator->data_ptr()[idx_r_1*_settings->nr2 + idx_r_2][iorb*_num_orbitals + jorb];
-                    value *= std::conj(_rho->data_ptr()[idx_r_1*_settings->nr2 + idx_r_2][iorb*_num_orbitals + jorb]);
+                    cdouble value = _operator->data_ptr()[idx_r_1*_settings_swe->nr2 + idx_r_2][iorb*_num_orbitals + jorb];
+                    value *= std::conj(_rho->data_ptr()[idx_r_1*_settings_swe->nr2 + idx_r_2][iorb*_num_orbitals + jorb]);
                     sum += value;
                 }   
             }

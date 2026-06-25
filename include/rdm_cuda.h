@@ -6,13 +6,13 @@
 #include <cuComplex.h>
 #include <cufft.h>
 #include "rdm.h"
-#include "settings.h"
+#include "settings_swe.h"
 
 #define cdouble_cuda cuDoubleComplex
 class RDM_cuda{
     private:
         RDM* _rho_cpu;
-        Settings* _settings;
+        Settings_swe* _settings_swe;
         cdouble_cuda *_d_data;
         cudaStream_t* _stream;
         cufftHandle _cufft_plan;
@@ -24,7 +24,7 @@ class RDM_cuda{
         void _create_cufft_plan();
 
     public:
-        RDM_cuda(Settings* settings, RDM* rho, cudaStream_t* stream);
+        RDM_cuda(Settings_swe* settings_swe, RDM* rho, cudaStream_t* stream);
         void copy_cpu_to_gpu();
         void copy_gpu_to_cpu();
         void convert_to_k();

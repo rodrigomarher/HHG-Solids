@@ -19,19 +19,19 @@ void Solver::init(){
     return;
 }
 
-Solver::Solver(Settings *settings, Grid* grid, Hamiltonian* hamiltonian, RDM* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier){
-    _settings = settings; 
+Solver::Solver(Settings_swe *settings_swe, Grid* grid, Hamiltonian* hamiltonian, RDM* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier){
+    _settings_swe = settings_swe; 
     _grid = grid;
     _hamiltonian = hamiltonian;
     _rho = rho;
     _efield = efield;
     _wannier = wannier;
-    _rho_aux = new RDM(settings, grid, wannier, rho->gauge(), rho->space_type());
+    _rho_aux = new RDM(settings_swe, grid, wannier, rho->gauge(), rho->space_type());
     _rho->copy_data(_rho_aux);
     _r_bc = r_bc;
 
-    _num_points = _settings->nr1 * _settings->nr2 * _settings->nr3;
-    _num_orbitals = _settings->num_orb;
+    _num_points = _settings_swe->nr1 * _settings_swe->nr2 * _settings_swe->nr3;
+    _num_orbitals = _settings_swe->num_orb;
 
     _allocate();
     
@@ -106,7 +106,7 @@ void Solver::step_rk4(const int ti, cdouble* peierls_phase){
     double ez_dt2 = 0;
     double ez_dt = 0;
     
-    if(ti<_settings->nt-1){
+    if(ti<_settings_swe->nt-1){
         ax = _efield->A_x[ti];
         ax_dt2 = 0.5*_efield->A_x[ti] + 0.5*_efield->A_x[ti+1];
         ax_dt = _efield->A_x[ti+1];
@@ -127,24 +127,24 @@ void Solver::step_rk4(const int ti, cdouble* peierls_phase){
         ez_dt = _efield->E_z[ti+1];
     }
     else {
-        ax = _efield->A_x[_settings->nt-1];
-        ax_dt2 = _efield->A_x[_settings->nt-1];
-        ax_dt = _efield->A_x[_settings->nt-1];
-        ex = _efield->E_x[_settings->nt-1];
-        ex_dt2 = _efield->E_x[_settings->nt-1];
-        ex_dt = _efield->E_x[_settings->nt-1];
-        ay = _efield->A_y[_settings->nt-1];
-        ay_dt2 = _efield->A_y[_settings->nt-1];
-        ay_dt = _efield->A_y[_settings->nt-1];
-        ey = _efield->E_y[_settings->nt-1];
-        ey_dt2 = _efield->E_y[_settings->nt-1];
-        ey_dt = _efield->E_y[_settings->nt-1];
-        az = _efield->A_z[_settings->nt-1];
-        az_dt2 = _efield->A_z[_settings->nt-1];
-        az_dt = _efield->A_z[_settings->nt-1];
-        ez = _efield->E_z[_settings->nt-1];
-        ez_dt2 = _efield->E_z[_settings->nt-1];
-        ez_dt = _efield->E_z[_settings->nt-1];
+        ax = _efield->A_x[_settings_swe->nt-1];
+        ax_dt2 = _efield->A_x[_settings_swe->nt-1];
+        ax_dt = _efield->A_x[_settings_swe->nt-1];
+        ex = _efield->E_x[_settings_swe->nt-1];
+        ex_dt2 = _efield->E_x[_settings_swe->nt-1];
+        ex_dt = _efield->E_x[_settings_swe->nt-1];
+        ay = _efield->A_y[_settings_swe->nt-1];
+        ay_dt2 = _efield->A_y[_settings_swe->nt-1];
+        ay_dt = _efield->A_y[_settings_swe->nt-1];
+        ey = _efield->E_y[_settings_swe->nt-1];
+        ey_dt2 = _efield->E_y[_settings_swe->nt-1];
+        ey_dt = _efield->E_y[_settings_swe->nt-1];
+        az = _efield->A_z[_settings_swe->nt-1];
+        az_dt2 = _efield->A_z[_settings_swe->nt-1];
+        az_dt = _efield->A_z[_settings_swe->nt-1];
+        ez = _efield->E_z[_settings_swe->nt-1];
+        ez_dt2 = _efield->E_z[_settings_swe->nt-1];
+        ez_dt = _efield->E_z[_settings_swe->nt-1];
     }
     _clear_kn();
     //_update_k1_conv_fftw(ex,  ey, ez, ax, ay, az); 
@@ -208,11 +208,11 @@ void Solver::_update_k1(const double ex, const double ey, const double ez,
             //coefs_i[0] = (int)coefs_d[0];
             //coefs_i[1] = (int)coefs_d[1];
             //coefs_i[2] = (int)coefs_d[2];
-            //coefs_i[0] = MOD(((coefs_i[0] + _settings->nr1/2) ),_settings->nr1);
-            //coefs_i[1] = MOD((coefs_i[1] + _settings->nr2/2),_settings->nr2);
-            //coefs_i[2] = MOD((coefs_i[2] + _settings->nr3/2),_settings->nr3);
-            //int idx_diff =   coefs_i[0]*_settings->nr2*_settings->nr3
-            //               + coefs_i[1]*_settings->nr3
+            //coefs_i[0] = MOD(((coefs_i[0] + _settings_swe->nr1/2) ),_settings_swe->nr1);
+            //coefs_i[1] = MOD((coefs_i[1] + _settings_swe->nr2/2),_settings_swe->nr2);
+            //coefs_i[2] = MOD((coefs_i[2] + _settings_swe->nr3/2),_settings_swe->nr3);
+            //int idx_diff =   coefs_i[0]*_settings_swe->nr2*_settings_swe->nr3
+            //               + coefs_i[1]*_settings_swe->nr3
             //               + coefs_i[2]; 
             int idx_diff = idx_r_p;
             cdouble peierls_phase = std::exp(-1.0*cdouble(0.0,-1.0*ax*_grid->Rvecs(idx_r_p)[0]
@@ -446,11 +446,11 @@ void Solver::_update_k2(const double ex, const double ey, const double ez,
             coefs_i[0] = (int)coefs_d[0];
             coefs_i[1] = (int)coefs_d[1];
             coefs_i[2] = (int)coefs_d[2];
-            coefs_i[0] = MOD((coefs_i[0] + _settings->nr1/2),_settings->nr1);
-            coefs_i[1] = MOD((coefs_i[1] + _settings->nr2/2),_settings->nr2);
-            coefs_i[2] = MOD((coefs_i[2] + _settings->nr3/2),_settings->nr3);
-            int idx_diff =   coefs_i[0]*_settings->nr2*_settings->nr3
-                           + coefs_i[1]*_settings->nr3
+            coefs_i[0] = MOD((coefs_i[0] + _settings_swe->nr1/2),_settings_swe->nr1);
+            coefs_i[1] = MOD((coefs_i[1] + _settings_swe->nr2/2),_settings_swe->nr2);
+            coefs_i[2] = MOD((coefs_i[2] + _settings_swe->nr3/2),_settings_swe->nr3);
+            int idx_diff =   coefs_i[0]*_settings_swe->nr2*_settings_swe->nr3
+                           + coefs_i[1]*_settings_swe->nr3
                            + coefs_i[2]; 
 
             cdouble peierls_phase = std::exp(-1.0*cdouble(0.0,-1.0*ax*_grid->Rvecs(idx_r_p)[0]
@@ -692,11 +692,11 @@ void Solver::_update_k3(const double ex, const double ey, const double ez,
             coefs_i[0] = (int)coefs_d[0];
             coefs_i[1] = (int)coefs_d[1];
             coefs_i[2] = (int)coefs_d[2];
-            coefs_i[0] = MOD((coefs_i[0] + _settings->nr1/2),_settings->nr1);
-            coefs_i[1] = MOD((coefs_i[1] + _settings->nr2/2),_settings->nr2);
-            coefs_i[2] = MOD((coefs_i[2] + _settings->nr3/2),_settings->nr3);
-            int idx_diff =   coefs_i[0]*_settings->nr2*_settings->nr3
-                           + coefs_i[1]*_settings->nr3
+            coefs_i[0] = MOD((coefs_i[0] + _settings_swe->nr1/2),_settings_swe->nr1);
+            coefs_i[1] = MOD((coefs_i[1] + _settings_swe->nr2/2),_settings_swe->nr2);
+            coefs_i[2] = MOD((coefs_i[2] + _settings_swe->nr3/2),_settings_swe->nr3);
+            int idx_diff =   coefs_i[0]*_settings_swe->nr2*_settings_swe->nr3
+                           + coefs_i[1]*_settings_swe->nr3
                            + coefs_i[2]; 
 
             cdouble peierls_phase = std::exp(-1.0*cdouble(0.0,-1.0*ax*_grid->Rvecs(idx_r_p)[0]
@@ -938,11 +938,11 @@ void Solver::_update_k4(const double ex, const double ey, const double ez,
             coefs_i[0] = (int)coefs_d[0];
             coefs_i[1] = (int)coefs_d[1];
             coefs_i[2] = (int)coefs_d[2];
-            coefs_i[0] = MOD((coefs_i[0] + _settings->nr1/2),_settings->nr1);
-            coefs_i[1] = MOD((coefs_i[1] + _settings->nr2/2),_settings->nr2);
-            coefs_i[2] = MOD((coefs_i[2] + _settings->nr3/2),_settings->nr3);
-            int idx_diff =   coefs_i[0]*_settings->nr2*_settings->nr3
-                           + coefs_i[1]*_settings->nr3
+            coefs_i[0] = MOD((coefs_i[0] + _settings_swe->nr1/2),_settings_swe->nr1);
+            coefs_i[1] = MOD((coefs_i[1] + _settings_swe->nr2/2),_settings_swe->nr2);
+            coefs_i[2] = MOD((coefs_i[2] + _settings_swe->nr3/2),_settings_swe->nr3);
+            int idx_diff =   coefs_i[0]*_settings_swe->nr2*_settings_swe->nr3
+                           + coefs_i[1]*_settings_swe->nr3
                            + coefs_i[2]; 
 
             cdouble peierls_phase = std::exp(-1.0*cdouble(0.0,-1.0*ax*_grid->Rvecs(idx_r_p)[0]
@@ -1189,11 +1189,11 @@ void Solver::_update_k1_no_blas(const double ex, const double ey, const double e
                     coefs_i[0] = (int)coefs_d[0];
                     coefs_i[1] = (int)coefs_d[1];
                     coefs_i[2] = (int)coefs_d[2];
-                    coefs_i[0] = MOD((coefs_i[0] + _settings->nr1/2),_settings->nr1);
-                    coefs_i[1] = MOD((coefs_i[1] + _settings->nr2/2),_settings->nr2);
-                    coefs_i[2] = MOD((coefs_i[2] + _settings->nr3/2),_settings->nr3);
-                    int idx_diff =   coefs_i[0]*_settings->nr2*_settings->nr3
-                                   + coefs_i[1]*_settings->nr3
+                    coefs_i[0] = MOD((coefs_i[0] + _settings_swe->nr1/2),_settings_swe->nr1);
+                    coefs_i[1] = MOD((coefs_i[1] + _settings_swe->nr2/2),_settings_swe->nr2);
+                    coefs_i[2] = MOD((coefs_i[2] + _settings_swe->nr3/2),_settings_swe->nr3);
+                    int idx_diff =   coefs_i[0]*_settings_swe->nr2*_settings_swe->nr3
+                                   + coefs_i[1]*_settings_swe->nr3
                                    + coefs_i[2]; 
 
 
@@ -1245,11 +1245,11 @@ void Solver::_update_k2_no_blas(const double ex, const double ey, const double e
                     coefs_i[0] = (int)coefs_d[0];
                     coefs_i[1] = (int)coefs_d[1];
                     coefs_i[2] = (int)coefs_d[2];
-                    coefs_i[0] = MOD((coefs_i[0] + _settings->nr1/2),_settings->nr1);
-                    coefs_i[1] = MOD((coefs_i[1] + _settings->nr2/2),_settings->nr2);
-                    coefs_i[2] = MOD((coefs_i[2] + _settings->nr3/2),_settings->nr3);
-                    int idx_diff =   coefs_i[0]*_settings->nr2*_settings->nr3
-                                   + coefs_i[1]*_settings->nr3
+                    coefs_i[0] = MOD((coefs_i[0] + _settings_swe->nr1/2),_settings_swe->nr1);
+                    coefs_i[1] = MOD((coefs_i[1] + _settings_swe->nr2/2),_settings_swe->nr2);
+                    coefs_i[2] = MOD((coefs_i[2] + _settings_swe->nr3/2),_settings_swe->nr3);
+                    int idx_diff =   coefs_i[0]*_settings_swe->nr2*_settings_swe->nr3
+                                   + coefs_i[1]*_settings_swe->nr3
                                    + coefs_i[2]; 
 
 
@@ -1303,11 +1303,11 @@ void Solver::_update_k3_no_blas(const double ex, const double ey, const double e
                     coefs_i[0] = (int)coefs_d[0];
                     coefs_i[1] = (int)coefs_d[1];
                     coefs_i[2] = (int)coefs_d[2];
-                    coefs_i[0] = MOD((coefs_i[0] + _settings->nr1/2),_settings->nr1);
-                    coefs_i[1] = MOD((coefs_i[1] + _settings->nr2/2),_settings->nr2);
-                    coefs_i[2] = MOD((coefs_i[2] + _settings->nr3/2),_settings->nr3);
-                    int idx_diff =   coefs_i[0]*_settings->nr2*_settings->nr3
-                                   + coefs_i[1]*_settings->nr3
+                    coefs_i[0] = MOD((coefs_i[0] + _settings_swe->nr1/2),_settings_swe->nr1);
+                    coefs_i[1] = MOD((coefs_i[1] + _settings_swe->nr2/2),_settings_swe->nr2);
+                    coefs_i[2] = MOD((coefs_i[2] + _settings_swe->nr3/2),_settings_swe->nr3);
+                    int idx_diff =   coefs_i[0]*_settings_swe->nr2*_settings_swe->nr3
+                                   + coefs_i[1]*_settings_swe->nr3
                                    + coefs_i[2]; 
 
 
@@ -1361,11 +1361,11 @@ void Solver::_update_k4_no_blas(const double ex, const double ey, const double e
                     coefs_i[0] = (int)coefs_d[0];
                     coefs_i[1] = (int)coefs_d[1];
                     coefs_i[2] = (int)coefs_d[2];
-                    coefs_i[0] = MOD((coefs_i[0] + _settings->nr1/2),_settings->nr1);
-                    coefs_i[1] = MOD((coefs_i[1] + _settings->nr2/2),_settings->nr2);
-                    coefs_i[2] = MOD((coefs_i[2] + _settings->nr3/2),_settings->nr3);
-                    int idx_diff =   coefs_i[0]*_settings->nr2*_settings->nr3
-                                   + coefs_i[1]*_settings->nr3
+                    coefs_i[0] = MOD((coefs_i[0] + _settings_swe->nr1/2),_settings_swe->nr1);
+                    coefs_i[1] = MOD((coefs_i[1] + _settings_swe->nr2/2),_settings_swe->nr2);
+                    coefs_i[2] = MOD((coefs_i[2] + _settings_swe->nr3/2),_settings_swe->nr3);
+                    int idx_diff =   coefs_i[0]*_settings_swe->nr2*_settings_swe->nr3
+                                   + coefs_i[1]*_settings_swe->nr3
                                    + coefs_i[2]; 
 
 
@@ -1436,8 +1436,8 @@ void Solver::_update_k1_conv_fftw(const double ex, const double ey, const double
 
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points);
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points);
-    fftw_plan forward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
-    fftw_plan backward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
+    fftw_plan forward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
+    fftw_plan backward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
 
     for(int iorb = 0; iorb < _num_orbitals; iorb++){
         for(int jorb = 0; jorb < _num_orbitals; jorb++){
@@ -1446,8 +1446,8 @@ void Solver::_update_k1_conv_fftw(const double ex, const double ey, const double
                 tmp_1[idx_r] = _peierls_phase[idx_r]*_heff[idx_r][iorb*_num_orbitals + jorb];
                 tmp_2[idx_r] = rho_ptr[idx_r][iorb*_num_orbitals + jorb];
             }
-            fftshift(tmp_1, _settings->nr1, _settings->nr2);
-            fftshift(tmp_2, _settings->nr1, _settings->nr2);
+            fftshift(tmp_1, _settings_swe->nr1, _settings_swe->nr2);
+            fftshift(tmp_2, _settings_swe->nr1, _settings_swe->nr2);
             fft3(tmp_1, in, out, _num_points, forward);
             fft3(tmp_2, in, out, _num_points, forward);
 
@@ -1482,7 +1482,7 @@ void Solver::_update_k1_conv_fftw(const double ex, const double ey, const double
             }
 
             ifft3(tmp_1, in, out, _num_points, backward);
-            ifftshift(tmp_1, _settings->nr1, _settings->nr2);
+            ifftshift(tmp_1, _settings_swe->nr1, _settings_swe->nr2);
             
             for(int idx_r = 0; idx_r < _num_points; idx_r++){
                 _k1[idx_r][iorb*_num_orbitals + jorb] = cdouble(0.0,-1.0)*tmp_1[idx_r];
@@ -1512,8 +1512,8 @@ void Solver::_update_k2_conv_fftw(const double ex, const double ey, const double
 
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points);
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points);
-    fftw_plan forward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
-    fftw_plan backward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
+    fftw_plan forward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
+    fftw_plan backward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
 
     for(int iorb = 0; iorb < _num_orbitals; iorb++){
         for(int jorb = 0; jorb < _num_orbitals; jorb++){
@@ -1523,8 +1523,8 @@ void Solver::_update_k2_conv_fftw(const double ex, const double ey, const double
                 tmp_2[idx_r] = rho_ptr[idx_r][iorb*_num_orbitals + jorb] + 0.5*_dt*_k1[idx_r][iorb*_num_orbitals + jorb];
             }
 
-            fftshift(tmp_1, _settings->nr1, _settings->nr2);
-            fftshift(tmp_2, _settings->nr1, _settings->nr2);
+            fftshift(tmp_1, _settings_swe->nr1, _settings_swe->nr2);
+            fftshift(tmp_2, _settings_swe->nr1, _settings_swe->nr2);
             fft3(tmp_1, in, out, _num_points, forward);
             fft3(tmp_2, in, out, _num_points, forward);
 
@@ -1559,7 +1559,7 @@ void Solver::_update_k2_conv_fftw(const double ex, const double ey, const double
             }
 
             ifft3(tmp_1, in, out, _num_points, backward);
-            ifftshift(tmp_1, _settings->nr1, _settings->nr2);
+            ifftshift(tmp_1, _settings_swe->nr1, _settings_swe->nr2);
             
             for(int idx_r = 0; idx_r < _num_points; idx_r++){
                 _k2[idx_r][iorb*_num_orbitals + jorb] = cdouble(0.0,-1.0)*tmp_1[idx_r];
@@ -1589,8 +1589,8 @@ void Solver::_update_k3_conv_fftw(const double ex, const double ey, const double
 
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points);
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points);
-    fftw_plan forward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
-    fftw_plan backward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
+    fftw_plan forward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
+    fftw_plan backward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
 
     for(int iorb = 0; iorb < _num_orbitals; iorb++){
         for(int jorb = 0; jorb < _num_orbitals; jorb++){
@@ -1601,8 +1601,8 @@ void Solver::_update_k3_conv_fftw(const double ex, const double ey, const double
                 tmp_2[idx_r] = rho_ptr[idx_r][iorb*_num_orbitals + jorb] + 0.5*_dt*_k2[idx_r][iorb*_num_orbitals + jorb];
             }
 
-            fftshift(tmp_1, _settings->nr1, _settings->nr2);
-            fftshift(tmp_2, _settings->nr1, _settings->nr2);
+            fftshift(tmp_1, _settings_swe->nr1, _settings_swe->nr2);
+            fftshift(tmp_2, _settings_swe->nr1, _settings_swe->nr2);
             fft3(tmp_1, in, out, _num_points, forward);
             fft3(tmp_2, in, out, _num_points, forward);
 
@@ -1637,7 +1637,7 @@ void Solver::_update_k3_conv_fftw(const double ex, const double ey, const double
             }
 
             ifft3(tmp_1, in, out, _num_points, backward);
-            ifftshift(tmp_1, _settings->nr1, _settings->nr2);
+            ifftshift(tmp_1, _settings_swe->nr1, _settings_swe->nr2);
 
             for(int idx_r = 0; idx_r < _num_points; idx_r++){
                 _k3[idx_r][iorb*_num_orbitals + jorb] = cdouble(0.0,-1.0)*tmp_1[idx_r];
@@ -1667,8 +1667,8 @@ void Solver::_update_k4_conv_fftw(const double ex, const double ey, const double
 
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points);
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points);
-    fftw_plan forward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
-    fftw_plan backward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
+    fftw_plan forward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_FORWARD, FFTW_MEASURE);
+    fftw_plan backward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_BACKWARD, FFTW_MEASURE);
 
     for(int iorb = 0; iorb < _num_orbitals; iorb++){
         for(int jorb = 0; jorb < _num_orbitals; jorb++){
@@ -1678,8 +1678,8 @@ void Solver::_update_k4_conv_fftw(const double ex, const double ey, const double
                 tmp_1[idx_r] = _peierls_phase[idx_r]*_heff[idx_r][iorb*_num_orbitals + jorb];
                 tmp_2[idx_r] = rho_ptr[idx_r][iorb*_num_orbitals + jorb] + _dt*_k3[idx_r][iorb*_num_orbitals + jorb];
             }
-            fftshift(tmp_1, _settings->nr1, _settings->nr2);
-            fftshift(tmp_2, _settings->nr1, _settings->nr2);
+            fftshift(tmp_1, _settings_swe->nr1, _settings_swe->nr2);
+            fftshift(tmp_2, _settings_swe->nr1, _settings_swe->nr2);
             fft3(tmp_1, in, out, _num_points, forward);
             fft3(tmp_2, in, out, _num_points, forward);
 
@@ -1714,7 +1714,7 @@ void Solver::_update_k4_conv_fftw(const double ex, const double ey, const double
             }
 
             ifft3(tmp_1, in, out, _num_points, backward);
-            ifftshift(tmp_1, _settings->nr1, _settings->nr2);
+            ifftshift(tmp_1, _settings_swe->nr1, _settings_swe->nr2);
             
             for(int idx_r = 0; idx_r < _num_points; idx_r++){
                 _k4[idx_r][iorb*_num_orbitals + jorb] = cdouble(0.0,-1.0)*tmp_1[idx_r];

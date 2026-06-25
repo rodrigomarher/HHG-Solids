@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include "settings.h"
+#include "settings_swe.h"
 #include "wannier_tb.h"
 #include "grid.h"
 #include "vec3_util.h"
@@ -8,8 +8,8 @@
 Grid::Grid(){
 }
 
-Grid::Grid(Settings *settings, WannierTB *wannier){
-    _settings = settings; _wannier = wannier;
+Grid::Grid(Settings_swe *settings_swe, WannierTB *wannier){
+    _settings_swe = settings_swe; _wannier = wannier;
     _unit_system = wannier->unit_system();
     for (int i=0; i<3; i++){
         _lattice_vector[i][0] = _wannier->lattice_vector[i][0];
@@ -46,41 +46,41 @@ void Grid::_calculate_reciprocal_vectors(){
 }
 
 void Grid::_allocate_grid(){
-    _n1 = new int[_settings->nr1];
-    _n2 = new int[_settings->nr2];
-    _n3 = new int[_settings->nr3];
-    _m1 = new int[_settings->nr1];
-    _m2 = new int[_settings->nr2];
-    _m3 = new int[_settings->nr3];
-    _t  = new double[_settings->nt];
-    _Rvecs = new double*[_settings->nr1*_settings->nr2*_settings->nr3];
-    _Kvecs = new double*[_settings->nr1*_settings->nr2*_settings->nr3];
-    for (int i=0; i<_settings->nr1*_settings->nr2*_settings->nr3; i++){
+    _n1 = new int[_settings_swe->nr1];
+    _n2 = new int[_settings_swe->nr2];
+    _n3 = new int[_settings_swe->nr3];
+    _m1 = new int[_settings_swe->nr1];
+    _m2 = new int[_settings_swe->nr2];
+    _m3 = new int[_settings_swe->nr3];
+    _t  = new double[_settings_swe->nt];
+    _Rvecs = new double*[_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3];
+    _Kvecs = new double*[_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3];
+    for (int i=0; i<_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3; i++){
         _Rvecs[i] = new double[3];
         _Kvecs[i] = new double[3];
     }
 }
 
 void Grid::_setup_grid(){
-    for(int i=0; i<_settings->nt; i++){
-        _t[i] = (double)i*_settings->dt;
+    for(int i=0; i<_settings_swe->nt; i++){
+        _t[i] = (double)i*_settings_swe->dt;
     }
-    for(int i=0; i<_settings->nr1; i++){
-        _n1[i] = -_settings->nr1/2 + (i);
+    for(int i=0; i<_settings_swe->nr1; i++){
+        _n1[i] = -_settings_swe->nr1/2 + (i);
         _m1[i] = i;
     }    
-    for(int i=0; i<_settings->nr2; i++){
-        _n2[i] = -_settings->nr2/2 + (i);
+    for(int i=0; i<_settings_swe->nr2; i++){
+        _n2[i] = -_settings_swe->nr2/2 + (i);
         _m2[i] = i;
     }    
-    for(int i=0; i<_settings->nr3; i++){
-        _n3[i] = -_settings->nr3/2 + (i);
+    for(int i=0; i<_settings_swe->nr3; i++){
+        _n3[i] = -_settings_swe->nr3/2 + (i);
         _m3[i] = i;
     }   
 
-    for(int i=0; i<_settings->nr1; i++){
-        for (int j=0; j<_settings->nr2; j++){
-            for (int k=0 ; k<_settings->nr3; k++){
+    for(int i=0; i<_settings_swe->nr1; i++){
+        for (int j=0; j<_settings_swe->nr2; j++){
+            for (int k=0 ; k<_settings_swe->nr3; k++){
                 double r_x = _n1[i]*_lattice_vector[0][0] +
                              _n2[j]*_lattice_vector[1][0] +
                              _n3[k]*_lattice_vector[2][0];
@@ -90,21 +90,21 @@ void Grid::_setup_grid(){
                 double r_z = _n1[i]*_lattice_vector[0][2] +
                              _n2[j]*_lattice_vector[1][2] +
                              _n3[k]*_lattice_vector[2][2];
-                double k_x = (double)_m1[i]/(double)_settings->nr1*_reciprocal_vector[0][0] +
-                             (double)_m2[j]/(double)_settings->nr2*_reciprocal_vector[1][0] +
-                             (double)_m3[k]/(double)_settings->nr3*_reciprocal_vector[2][0];
-                double k_y = (double)_m1[i]/(double)_settings->nr1*_reciprocal_vector[0][1] +
-                             (double)_m2[j]/(double)_settings->nr2*_reciprocal_vector[1][1] +
-                             (double)_m3[k]/(double)_settings->nr3*_reciprocal_vector[2][1];
-                double k_z = (double)_m1[i]/(double)_settings->nr1*_reciprocal_vector[0][2] +
-                             (double)_m2[j]/(double)_settings->nr2*_reciprocal_vector[1][2] +
-                             (double)_m3[k]/(double)_settings->nr3*_reciprocal_vector[2][2];
-                _Rvecs[i*_settings->nr2*_settings->nr3 + j*_settings->nr3 + k][0] = r_x;
-                _Rvecs[i*_settings->nr2*_settings->nr3 + j*_settings->nr3 + k][1] = r_y;
-                _Rvecs[i*_settings->nr2*_settings->nr3 + j*_settings->nr3 + k][2] = r_z;
-                _Kvecs[i*_settings->nr2*_settings->nr3 + j*_settings->nr3 + k][0] = k_x;
-                _Kvecs[i*_settings->nr2*_settings->nr3 + j*_settings->nr3 + k][1] = k_y;
-                _Kvecs[i*_settings->nr2*_settings->nr3 + j*_settings->nr3 + k][2] = k_z;
+                double k_x = (double)_m1[i]/(double)_settings_swe->nr1*_reciprocal_vector[0][0] +
+                             (double)_m2[j]/(double)_settings_swe->nr2*_reciprocal_vector[1][0] +
+                             (double)_m3[k]/(double)_settings_swe->nr3*_reciprocal_vector[2][0];
+                double k_y = (double)_m1[i]/(double)_settings_swe->nr1*_reciprocal_vector[0][1] +
+                             (double)_m2[j]/(double)_settings_swe->nr2*_reciprocal_vector[1][1] +
+                             (double)_m3[k]/(double)_settings_swe->nr3*_reciprocal_vector[2][1];
+                double k_z = (double)_m1[i]/(double)_settings_swe->nr1*_reciprocal_vector[0][2] +
+                             (double)_m2[j]/(double)_settings_swe->nr2*_reciprocal_vector[1][2] +
+                             (double)_m3[k]/(double)_settings_swe->nr3*_reciprocal_vector[2][2];
+                _Rvecs[i*_settings_swe->nr2*_settings_swe->nr3 + j*_settings_swe->nr3 + k][0] = r_x;
+                _Rvecs[i*_settings_swe->nr2*_settings_swe->nr3 + j*_settings_swe->nr3 + k][1] = r_y;
+                _Rvecs[i*_settings_swe->nr2*_settings_swe->nr3 + j*_settings_swe->nr3 + k][2] = r_z;
+                _Kvecs[i*_settings_swe->nr2*_settings_swe->nr3 + j*_settings_swe->nr3 + k][0] = k_x;
+                _Kvecs[i*_settings_swe->nr2*_settings_swe->nr3 + j*_settings_swe->nr3 + k][1] = k_y;
+                _Kvecs[i*_settings_swe->nr2*_settings_swe->nr3 + j*_settings_swe->nr3 + k][2] = k_z;
             }
         }
     } 
@@ -122,7 +122,7 @@ void Grid::convert_to_au(){
         _reciprocal_vector[i][1] /= length_A2au;
         _reciprocal_vector[i][2] /= length_A2au;
     }
-    for (int i=0; i<_settings->nr1*_settings->nr2*_settings->nr3; i++){
+    for (int i=0; i<_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3; i++){
         _Rvecs[i][0] *= length_A2au;
         _Rvecs[i][1] *= length_A2au;
         _Rvecs[i][2] *= length_A2au;
@@ -130,7 +130,7 @@ void Grid::convert_to_au(){
         _Kvecs[i][1] /= length_A2au;
         _Kvecs[i][2] /= length_A2au;
     }
-    for (int i=0; i<_settings->nt; i++){
+    for (int i=0; i<_settings_swe->nt; i++){
         _t[i] *= time_fs2au;
     }
     _unit_system = AU;
@@ -148,7 +148,7 @@ void Grid::convert_to_si(){
         _reciprocal_vector[i][1] /= length_au2A;
         _reciprocal_vector[i][2] /= length_au2A;
     }
-    for (int i=0; i<_settings->nr1*_settings->nr2*_settings->nr3; i++){
+    for (int i=0; i<_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3; i++){
         _Rvecs[i][0] /= length_A2au;
         _Rvecs[i][1] /= length_A2au;
         _Rvecs[i][2] /= length_A2au;
@@ -157,7 +157,7 @@ void Grid::convert_to_si(){
         _Kvecs[i][2] *= length_A2au;
     }
 
-    for (int i=0; i<_settings->nt; i++){
+    for (int i=0; i<_settings_swe->nt; i++){
         _t[i] *= time_au2fs;
     }
     _unit_system = SI;
@@ -183,7 +183,7 @@ void Grid::print_lattice(){
 void Grid::supercell_to_file(const std::string &filename){
     std::string unit_system_str = _unit_system == SI ? "_SI_" : "_AU_";
     std::ofstream file (filename);
-    int size = _settings->nr1*_settings->nr2*_settings->nr3;
+    int size = _settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3;
     if (file.is_open()){
         file<<unit_system_str<<std::endl;
         for(int i = 0; i < size; i++){
@@ -199,7 +199,7 @@ void Grid::supercell_to_file(const std::string &filename){
 void Grid::reciprocal_to_file(const std::string &filename){
     std::string unit_system_str = _unit_system == SI ? "_SI_" : "_AU_";
     std::ofstream file (filename);
-    int size = _settings->nr1*_settings->nr2*_settings->nr3;
+    int size = _settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3;
     if (file.is_open()){
         file<<unit_system_str<<std::endl;
         for(int i = 0; i < size; i++){
@@ -249,7 +249,7 @@ Grid::~Grid(){
     delete[] _m1;
     delete[] _m2;
     delete[] _m3;
-    for (int i = 0; i<_settings->nr1*_settings->nr2*_settings->nr3; i++){
+    for (int i = 0; i<_settings_swe->nr1*_settings_swe->nr2*_settings_swe->nr3; i++){
         delete[] _Rvecs[i];
         delete[] _Kvecs[i];
     }

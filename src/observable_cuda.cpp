@@ -4,25 +4,25 @@
 #include "kernels_observable_cuda.h"
 #include "cuda_helpers/helper_cuda.h"
 
-Observable_cuda::Observable_cuda(Settings* settings, Grid * grid, RDM_cuda* rho, Operator* op, cudaStream_t* stream){
+Observable_cuda::Observable_cuda(Settings_swe* settings_swe, Grid * grid, RDM_cuda* rho, Operator* op, cudaStream_t* stream){
     _unit_system = grid->unit_system();
-    _settings = settings;
+    _settings_swe = settings_swe;
     _rho_cuda = rho;
     _operator = op;
     _stream = stream;
     _grid = grid;
     
-    _num_points = settings->nr1*settings->nr2*settings->nr3;
-    _num_orbitals = settings->num_orb;
-    _data = new cdouble[_settings->nt];
+    _num_points = settings_swe->nr1*settings_swe->nr2*settings_swe->nr3;
+    _num_orbitals = settings_swe->num_orb;
+    _data = new cdouble[_settings_swe->nt];
 
     _allocate();
 //    _init_device();
 }
 
 void Observable_cuda::_allocate(){
-    checkCudaErrors(cudaMallocAsync((void**)&_d_data, sizeof(cdouble_cuda)*_settings->nt, *_stream));
-    checkCudaErrors(cudaMemsetAsync(_d_data, 0, sizeof(cdouble_cuda)*_settings->nt, *_stream));
+    checkCudaErrors(cudaMallocAsync((void**)&_d_data, sizeof(cdouble_cuda)*_settings_swe->nt, *_stream));
+    checkCudaErrors(cudaMemsetAsync(_d_data, 0, sizeof(cdouble_cuda)*_settings_swe->nt, *_stream));
     checkCudaErrors(cudaMallocAsync((void**)&_d_operator, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMemsetAsync(_d_operator, 0, sizeof(cdouble_cuda)*_num_points*_num_orbitals*_num_orbitals, *_stream));
     checkCudaErrors(cudaMallocAsync((void**)&_d_r_vec_x, sizeof(double)*_num_points, *_stream));
@@ -86,14 +86,14 @@ cdouble_cuda* Observable_cuda::get_d_ptr(){
 }
 
 void Observable_cuda::copy_device_to_host(){
-    checkCudaErrors(cudaMemcpyAsync(_data, _d_data, sizeof(cdouble_cuda)*_settings->nt, cudaMemcpyDeviceToHost, *_stream));
+    checkCudaErrors(cudaMemcpyAsync(_data, _d_data, sizeof(cdouble_cuda)*_settings_swe->nt, cudaMemcpyDeviceToHost, *_stream));
 }
 
 void Observable_cuda::write(std::string filename){
     std::ofstream file(filename);
     if(file.is_open()){
         file << _unit_system << std::endl;
-        for(int i=0; i <_settings->nt; i++){
+        for(int i=0; i <_settings_swe->nt; i++){
             file << std::abs(_data[i]) << " " <<std::atan2(_data[i].imag(), _data[i].real()) << std::endl;
         }
         file.close();

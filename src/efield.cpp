@@ -4,27 +4,27 @@
 #include <iostream>
 #include "efield.h"
 
-Efield::Efield(Settings *settings, Grid* grid, int unit_system){
-    _grid = grid; _settings = settings;
+Efield::Efield(Settings_swe *settings_swe, Grid* grid, int unit_system){
+    _grid = grid; _settings_swe = settings_swe;
     _t = grid->t();
-    _lambda = settings->lambda_nm*10.0;
+    _lambda = settings_swe->lambda_nm*10.0;
     _omega = 2.0*M_PI*c_si/_lambda;
-    _tmax_field = settings->tmax_field;
+    _tmax_field = settings_swe->tmax_field;
     _unit_system = unit_system; 
-    _svec[0] = settings->sx;
-    _svec[1] = settings->sy;
-    _svec[2] = settings->sz;
+    _svec[0] = settings_swe->sx;
+    _svec[1] = settings_swe->sy;
+    _svec[2] = settings_swe->sz;
     _allocate();
 
 }
 
 void Efield::_allocate(){
-    E_x = new double[_settings->nt];
-    E_y = new double[_settings->nt];
-    E_z = new double[_settings->nt];
-    A_x = new double[_settings->nt];
-    A_y = new double[_settings->nt];
-    A_z = new double[_settings->nt];
+    E_x = new double[_settings_swe->nt];
+    E_y = new double[_settings_swe->nt];
+    E_z = new double[_settings_swe->nt];
+    A_x = new double[_settings_swe->nt];
+    A_y = new double[_settings_swe->nt];
+    A_z = new double[_settings_swe->nt];
 }
 
 void Efield::init_fields(){
@@ -32,17 +32,17 @@ void Efield::init_fields(){
         std::cout<<"[Efield::_init_fields] Error, unit system must be AU."<<std::endl;
         std::exit(1);
     }
-    double efield_peak = sqrtf(_settings->intensity_wcm2*intensity_Wcm2au);
+    double efield_peak = sqrtf(_settings_swe->intensity_wcm2*intensity_Wcm2au);
     double dt = _t[1]-_t[0];
-    for(int i=0; i<_settings->nt; i++){
-        E_x[i] = _settings->sx*efield_peak*_env_sin2(_t[i])*sinf(_omega*_t[i] + _settings->phi_x);
-        E_y[i] = _settings->sy*efield_peak*_env_sin2(_t[i])*sinf(_omega*_t[i] + _settings->phi_y);
-        E_z[i] = _settings->sz*efield_peak*_env_sin2(_t[i])*sinf(_omega*_t[i] + _settings->phi_z);
+    for(int i=0; i<_settings_swe->nt; i++){
+        E_x[i] = _settings_swe->sx*efield_peak*_env_sin2(_t[i])*sinf(_omega*_t[i] + _settings_swe->phi_x);
+        E_y[i] = _settings_swe->sy*efield_peak*_env_sin2(_t[i])*sinf(_omega*_t[i] + _settings_swe->phi_y);
+        E_z[i] = _settings_swe->sz*efield_peak*_env_sin2(_t[i])*sinf(_omega*_t[i] + _settings_swe->phi_z);
         A_x[i] = 0.0;
         A_y[i] = 0.0;
         A_z[i] = 0.0;
     }
-    for(int i=1; i<_settings->nt; i++){
+    for(int i=1; i<_settings_swe->nt; i++){
         A_x[i] = A_x[i-1] - E_x[i-1]*dt;
         A_y[i] = A_y[i-1] - E_y[i-1]*dt;
         A_z[i] = A_z[i-1] - E_z[i-1]*dt;
@@ -51,12 +51,12 @@ void Efield::init_fields(){
 
 void Efield::init_fields(double *ex, double *ey, double *ez){
     double dt = _t[1] - _t[0];
-    for(int i=0; i<_settings->nt; i++){
+    for(int i=0; i<_settings_swe->nt; i++){
         E_x[i] = ex[i];
         E_y[i] = ey[i];
         E_z[i] = ez[i];
     }
-    for(int i=1; i<_settings->nt; i++){
+    for(int i=1; i<_settings_swe->nt; i++){
         A_x[i] = A_x[i-1] - E_x[i-1]*dt;
         A_y[i] = A_y[i-1] - E_y[i-1]*dt;
         A_z[i] = A_z[i-1] - E_z[i-1]*dt;
@@ -114,7 +114,7 @@ void Efield::write(){
     if(file_efield.is_open() && file_afield.is_open()){
         file_efield << _unit_system<<std::endl;
         file_afield << _unit_system<<std::endl;
-        for (int i=0; i<_settings->nt; i++){
+        for (int i=0; i<_settings_swe->nt; i++){
             file_efield<<_t[i]<<" "<< E_x[i] << " "<< E_y[i]<<" "<< E_z[i]<<std::endl;
             file_afield<<_t[i]<<" "<< A_x[i] << " "<< A_y[i]<<" "<< A_z[i]<<std::endl;
         }

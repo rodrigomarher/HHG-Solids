@@ -11,8 +11,8 @@ Solver_kspace::Solver_kspace(){
 
 }
 
-Solver_kspace::Solver_kspace(Settings *settings, Grid* grid, Hamiltonian* hamiltonian, RDM* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier){
-    _settings = settings; 
+Solver_kspace::Solver_kspace(Settings_swe *settings_swe, Grid* grid, Hamiltonian* hamiltonian, RDM* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier){
+    _settings_swe = settings_swe; 
     _grid = grid;
     _hamiltonian = hamiltonian;
     _rho = rho;
@@ -20,8 +20,8 @@ Solver_kspace::Solver_kspace(Settings *settings, Grid* grid, Hamiltonian* hamilt
     _wannier = wannier;
     _r_bc = r_bc;
 
-    _num_points = _settings->nr1 * _settings->nr2 * _settings->nr3;
-    _num_orbitals = _settings->num_orb;
+    _num_points = _settings_swe->nr1 * _settings_swe->nr2 * _settings_swe->nr3;
+    _num_orbitals = _settings_swe->num_orb;
 
     _allocate();
  
@@ -123,13 +123,13 @@ void Solver_kspace::_convert_to_kspace(cdouble** data){
     cdouble* tmp1 = new cdouble[_num_points];
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points); 
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points); 
-    fftw_plan forward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan forward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
     
     for(int iorb = 0; iorb<_num_orbitals*_num_orbitals; iorb++){
         for(int idx_r = 0; idx_r < _num_points; idx_r++){
             tmp1[idx_r] = data[idx_r][iorb];
         }
-        ifftshift(tmp1, _settings->nr1, _settings->nr2);
+        ifftshift(tmp1, _settings_swe->nr1, _settings_swe->nr2);
         fft3(tmp1, in, out, _num_points, forward);
         for(int idx_k = 0; idx_k < _num_points; idx_k++){
             data[idx_k][iorb] = tmp1[idx_k];
@@ -146,15 +146,15 @@ void Solver_kspace::_convert_to_rspace(cdouble** data){
     cdouble* tmp1 = new cdouble[_num_points];
     fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points); 
     fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*_num_points); 
-    fftw_plan backward = fftw_plan_dft_2d(_settings->nr1, _settings->nr2, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan backward = fftw_plan_dft_2d(_settings_swe->nr1, _settings_swe->nr2, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
     
     for(int iorb = 0; iorb<_num_orbitals*_num_orbitals; iorb++){
         for(int idx_k = 0; idx_k < _num_points; idx_k++){
             tmp1[idx_k] = data[idx_k][iorb];
         }
-        //fftshift(tmp1, _settings->nr1, _settings->nr2);
+        //fftshift(tmp1, _settings_swe->nr1, _settings_swe->nr2);
         ifft3(tmp1, in, out, _num_points, backward);
-        ifftshift(tmp1, _settings->nr1, _settings->nr2);
+        ifftshift(tmp1, _settings_swe->nr1, _settings_swe->nr2);
         for(int idx_r = 0; idx_r < _num_points; idx_r++){
             data[idx_r][iorb] = tmp1[idx_r];
         }
@@ -188,7 +188,7 @@ void Solver_kspace::step_rk4(const int ti){
     double ez_dt2 = 0;
     double ez_dt = 0;
     
-    if(ti<_settings->nt-1){
+    if(ti<_settings_swe->nt-1){
         ax = _efield->A_x[ti];
         ax_dt2 = 0.5*_efield->A_x[ti] + 0.5*_efield->A_x[ti+1];
         ax_dt = _efield->A_x[ti+1];
@@ -209,24 +209,24 @@ void Solver_kspace::step_rk4(const int ti){
         ez_dt = _efield->E_z[ti+1];
     }
     else {
-        ax = _efield->A_x[_settings->nt-1];
-        ax_dt2 = _efield->A_x[_settings->nt-1];
-        ax_dt = _efield->A_x[_settings->nt-1];
-        ex = _efield->E_x[_settings->nt-1];
-        ex_dt2 = _efield->E_x[_settings->nt-1];
-        ex_dt = _efield->E_x[_settings->nt-1];
-        ay = _efield->A_y[_settings->nt-1];
-        ay_dt2 = _efield->A_y[_settings->nt-1];
-        ay_dt = _efield->A_y[_settings->nt-1];
-        ey = _efield->E_y[_settings->nt-1];
-        ey_dt2 = _efield->E_y[_settings->nt-1];
-        ey_dt = _efield->E_y[_settings->nt-1];
-        az = _efield->A_z[_settings->nt-1];
-        az_dt2 = _efield->A_z[_settings->nt-1];
-        az_dt = _efield->A_z[_settings->nt-1];
-        ez = _efield->E_z[_settings->nt-1];
-        ez_dt2 = _efield->E_z[_settings->nt-1];
-        ez_dt = _efield->E_z[_settings->nt-1];
+        ax = _efield->A_x[_settings_swe->nt-1];
+        ax_dt2 = _efield->A_x[_settings_swe->nt-1];
+        ax_dt = _efield->A_x[_settings_swe->nt-1];
+        ex = _efield->E_x[_settings_swe->nt-1];
+        ex_dt2 = _efield->E_x[_settings_swe->nt-1];
+        ex_dt = _efield->E_x[_settings_swe->nt-1];
+        ay = _efield->A_y[_settings_swe->nt-1];
+        ay_dt2 = _efield->A_y[_settings_swe->nt-1];
+        ay_dt = _efield->A_y[_settings_swe->nt-1];
+        ey = _efield->E_y[_settings_swe->nt-1];
+        ey_dt2 = _efield->E_y[_settings_swe->nt-1];
+        ey_dt = _efield->E_y[_settings_swe->nt-1];
+        az = _efield->A_z[_settings_swe->nt-1];
+        az_dt2 = _efield->A_z[_settings_swe->nt-1];
+        az_dt = _efield->A_z[_settings_swe->nt-1];
+        ez = _efield->E_z[_settings_swe->nt-1];
+        ez_dt2 = _efield->E_z[_settings_swe->nt-1];
+        ez_dt = _efield->E_z[_settings_swe->nt-1];
     }
     //for(int idx_r = 0; idx_r<_num_points; idx_r++){
     //    for (int iorb=0; iorb<_num_orbitals*_num_orbitals; iorb++){
@@ -273,9 +273,9 @@ void Solver_kspace::step_rk4(const int ti){
 
 void Solver_kspace::_update_k1(const double ex, const double ey, const double ez,
                                const double ax, const double ay, const double az){
-    int N1 = _settings->nr1;
-    int N2 = _settings->nr2;
-    int N3 = _settings->nr3;
+    int N1 = _settings_swe->nr1;
+    int N2 = _settings_swe->nr2;
+    int N3 = _settings_swe->nr3;
     cdouble* heff_comm_k = new cdouble[_num_orbitals*_num_orbitals];
     cdouble* rho_comm_k = new cdouble[_num_orbitals*_num_orbitals];
     cdouble* comm_k = new cdouble[_num_orbitals*_num_orbitals];
@@ -285,8 +285,8 @@ void Solver_kspace::_update_k1(const double ex, const double ey, const double ez
     for (int i=0; i<3; i++){reciprocal_lattice_vector[i] = new double[3];}
     _grid->reciprocal_vector(reciprocal_lattice_vector);
 
-    for(int idx_k_1 = 0; idx_k_1 < _settings->nr1; idx_k_1++){
-        for(int idx_k_2 = 0; idx_k_2 < _settings->nr2; idx_k_2++){
+    for(int idx_k_1 = 0; idx_k_1 < _settings_swe->nr1; idx_k_1++){
+        for(int idx_k_2 = 0; idx_k_2 < _settings_swe->nr2; idx_k_2++){
             double k_vec[3];
             k_vec[0] = _grid->Kvecs(idx_k_1*N2 + idx_k_2)[0] - ax;
             k_vec[1] = _grid->Kvecs(idx_k_1*N2 + idx_k_2)[1] - ay;
@@ -318,9 +318,9 @@ void Solver_kspace::_update_k1(const double ex, const double ey, const double ez
 
 void Solver_kspace::_update_k2(const double ex, const double ey, const double ez,
                                const double ax, const double ay, const double az){
-    int N1 = _settings->nr1;
-    int N2 = _settings->nr2;
-    int N3 = _settings->nr3;
+    int N1 = _settings_swe->nr1;
+    int N2 = _settings_swe->nr2;
+    int N3 = _settings_swe->nr3;
     cdouble* heff_comm_k = new cdouble[_num_orbitals*_num_orbitals];
     cdouble* rho_comm_k = new cdouble[_num_orbitals*_num_orbitals];
     cdouble* comm_k = new cdouble[_num_orbitals*_num_orbitals];
@@ -328,8 +328,8 @@ void Solver_kspace::_update_k2(const double ex, const double ey, const double ez
     reciprocal_lattice_vector = new double*[3];
     for (int i=0; i<3; i++){reciprocal_lattice_vector[i] = new double[3];}
     _grid->reciprocal_vector(reciprocal_lattice_vector);
-    for(int idx_k_1 = 0; idx_k_1 < _settings->nr1; idx_k_1++){
-        for(int idx_k_2 = 0; idx_k_2 < _settings->nr2; idx_k_2++){
+    for(int idx_k_1 = 0; idx_k_1 < _settings_swe->nr1; idx_k_1++){
+        for(int idx_k_2 = 0; idx_k_2 < _settings_swe->nr2; idx_k_2++){
             double k_vec[3];
             k_vec[0] = _grid->Kvecs(idx_k_1*N2 + idx_k_2)[0] - ax;
             k_vec[1] = _grid->Kvecs(idx_k_1*N2 + idx_k_2)[1] - ay;
@@ -358,9 +358,9 @@ void Solver_kspace::_update_k2(const double ex, const double ey, const double ez
 
 void Solver_kspace::_update_k3(const double ex, const double ey, const double ez,
                                const double ax, const double ay, const double az){
-    int N1 = _settings->nr1;
-    int N2 = _settings->nr2;
-    int N3 = _settings->nr3;
+    int N1 = _settings_swe->nr1;
+    int N2 = _settings_swe->nr2;
+    int N3 = _settings_swe->nr3;
     cdouble* heff_comm_k = new cdouble[_num_orbitals*_num_orbitals];
     cdouble* rho_comm_k = new cdouble[_num_orbitals*_num_orbitals];
     cdouble* comm_k = new cdouble[_num_orbitals*_num_orbitals];
@@ -368,8 +368,8 @@ void Solver_kspace::_update_k3(const double ex, const double ey, const double ez
     reciprocal_lattice_vector = new double*[3];
     for (int i=0; i<3; i++){reciprocal_lattice_vector[i] = new double[3];}
     _grid->reciprocal_vector(reciprocal_lattice_vector);
-    for(int idx_k_1 = 0; idx_k_1 < _settings->nr1; idx_k_1++){
-        for(int idx_k_2 = 0; idx_k_2 < _settings->nr2; idx_k_2++){
+    for(int idx_k_1 = 0; idx_k_1 < _settings_swe->nr1; idx_k_1++){
+        for(int idx_k_2 = 0; idx_k_2 < _settings_swe->nr2; idx_k_2++){
             double k_vec[3];
             k_vec[0] = _grid->Kvecs(idx_k_1*N2 + idx_k_2)[0] - ax;
             k_vec[1] = _grid->Kvecs(idx_k_1*N2 + idx_k_2)[1] - ay;
@@ -398,9 +398,9 @@ void Solver_kspace::_update_k3(const double ex, const double ey, const double ez
 
 void Solver_kspace::_update_k4(const double ex, const double ey, const double ez,
                                const double ax, const double ay, const double az){
-    int N1 = _settings->nr1;
-    int N2 = _settings->nr2;
-    int N3 = _settings->nr3;
+    int N1 = _settings_swe->nr1;
+    int N2 = _settings_swe->nr2;
+    int N3 = _settings_swe->nr3;
     cdouble* heff_comm_k = new cdouble[_num_orbitals*_num_orbitals];
     cdouble* rho_comm_k = new cdouble[_num_orbitals*_num_orbitals];
     cdouble* comm_k = new cdouble[_num_orbitals*_num_orbitals];
@@ -408,8 +408,8 @@ void Solver_kspace::_update_k4(const double ex, const double ey, const double ez
     reciprocal_lattice_vector = new double*[3];
     for (int i=0; i<3; i++){reciprocal_lattice_vector[i] = new double[3];}
     _grid->reciprocal_vector(reciprocal_lattice_vector);
-    for(int idx_k_1 = 0; idx_k_1 < _settings->nr1; idx_k_1++){
-        for(int idx_k_2 = 0; idx_k_2 < _settings->nr2; idx_k_2++){
+    for(int idx_k_1 = 0; idx_k_1 < _settings_swe->nr1; idx_k_1++){
+        for(int idx_k_2 = 0; idx_k_2 < _settings_swe->nr2; idx_k_2++){
             double k_vec[3];
             k_vec[0] = _grid->Kvecs(idx_k_1*N2 + idx_k_2)[0] - ax;
             k_vec[1] = _grid->Kvecs(idx_k_1*N2 + idx_k_2)[1] - ay;

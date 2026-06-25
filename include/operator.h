@@ -20,13 +20,13 @@ class Operator{
         int _numpoints;
         int _num_orbitals;
         MatrixField* _matrix;
-        Settings* _settings;
+        Settings_swe* _settings_swe;
         Grid* _grid;
         WannierTB* _wannier;
         virtual void _setup() = 0;
         
     public:
-        Operator(Settings* settings, Grid *grid, WannierTB *wannier, int gauge, int space_type); 
+        Operator(Settings_swe* settings_swe, Grid *grid, WannierTB *wannier, int gauge, int space_type); 
         virtual void convert_to_au() = 0;
         virtual void convert_to_si() = 0;
         int unit_system();

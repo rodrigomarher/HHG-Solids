@@ -2,9 +2,9 @@
 
 #include <string>
 #define nr 10
-class Settings{
+class Settings_swe{
     public:
-        Settings();
+        Settings_swe();
         int nr1 = nr;
         int nr2 = nr;
         int nr3 = 1;
@@ -27,5 +27,5 @@ class Settings{
         int num_sites;
         std::string path_tb;
         std::string path_results = "results/";
-        void print_settings();
+        void print_settings_swe();
 };

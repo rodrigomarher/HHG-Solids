@@ -24,7 +24,7 @@ class Observable_cuda{
         cdouble* _data;
         cudaStream_t* _stream;
         
-        Settings* _settings;
+        Settings_swe* _settings_swe;
         Grid* _grid;
         RDM_cuda* _rho_cuda;
         Operator* _operator;
@@ -32,7 +32,7 @@ class Observable_cuda{
         void _allocate();
         void _deallocate();
     public:
-        Observable_cuda(Settings* settings, Grid* grid, RDM_cuda* rho, Operator* op, cudaStream_t* stream);
+        Observable_cuda(Settings_swe* settings_swe, Grid* grid, RDM_cuda* rho, Operator* op, cudaStream_t* stream);
         void init_device();
         void calculate(int ti, double ax, double ay, double az);
         void write(std::string filename);

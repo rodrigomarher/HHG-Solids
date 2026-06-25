@@ -28,8 +28,8 @@ void Solver_cuda::init(){
     return;
 }
 
-Solver_cuda::Solver_cuda(Settings *settings, Grid* grid, Hamiltonian* hamiltonian, RDM_cuda* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier, cudaStream_t* stream){
-    _settings = settings; 
+Solver_cuda::Solver_cuda(Settings_swe *settings_swe, Grid* grid, Hamiltonian* hamiltonian, RDM_cuda* rho, BerryConnection** r_bc, Efield* efield, WannierTB* wannier, cudaStream_t* stream){
+    _settings_swe = settings_swe; 
     _grid = grid;
     _hamiltonian = hamiltonian;
     _rho = rho;
@@ -37,8 +37,8 @@ Solver_cuda::Solver_cuda(Settings *settings, Grid* grid, Hamiltonian* hamiltonia
     _wannier = wannier;
     _r_bc = r_bc;
 
-    _num_points = _settings->nr1 * _settings->nr2 * _settings->nr3;
-    _num_orbitals = _settings->num_orb;
+    _num_points = _settings_swe->nr1 * _settings_swe->nr2 * _settings_swe->nr3;
+    _num_orbitals = _settings_swe->num_orb;
 
     _stream = stream;
     _d_rho = _rho->get_ptr_cuda();
@@ -113,11 +113,11 @@ Solver_cuda::~Solver_cuda(){
 }
 
 void Solver_cuda::_create_cufft_plan(){
-    int dims[2] = {_settings->nr1, _settings->nr2};
-    int embed[2] = {_settings->nr1, _settings->nr2};
+    int dims[2] = {_settings_swe->nr1, _settings_swe->nr2};
+    int embed[2] = {_settings_swe->nr1, _settings_swe->nr2};
     cufftPlanMany(&_cufft_plan, 2, dims,
-                  embed, 1, _settings->nr1*_settings->nr2,
-                  embed, 1, _settings->nr1*_settings->nr2,
+                  embed, 1, _settings_swe->nr1*_settings_swe->nr2,
+                  embed, 1, _settings_swe->nr1*_settings_swe->nr2,
                   CUFFT_Z2Z, _num_orbitals*_num_orbitals);
     cufftSetStream(_cufft_plan, *_stream);
 }
@@ -144,7 +144,7 @@ void Solver_cuda::step_rk4(const int ti){
     double ez_dt2 = 0;
     double ez_dt = 0;
     
-    if(ti<_settings->nt-1){
+    if(ti<_settings_swe->nt-1){
         ax = _efield->A_x[ti];
         ax_dt2 = 0.5*_efield->A_x[ti] + 0.5*_efield->A_x[ti+1];
         ax_dt = _efield->A_x[ti+1];
@@ -165,24 +165,24 @@ void Solver_cuda::step_rk4(const int ti){
         ez_dt = _efield->E_z[ti+1];
     }
     else {
-        ax = _efield->A_x[_settings->nt-1];
-        ax_dt2 = _efield->A_x[_settings->nt-1];
-        ax_dt = _efield->A_x[_settings->nt-1];
-        ex = _efield->E_x[_settings->nt-1];
-        ex_dt2 = _efield->E_x[_settings->nt-1];
-        ex_dt = _efield->E_x[_settings->nt-1];
-        ay = _efield->A_y[_settings->nt-1];
-        ay_dt2 = _efield->A_y[_settings->nt-1];
-        ay_dt = _efield->A_y[_settings->nt-1];
-        ey = _efield->E_y[_settings->nt-1];
-        ey_dt2 = _efield->E_y[_settings->nt-1];
-        ey_dt = _efield->E_y[_settings->nt-1];
-        az = _efield->A_z[_settings->nt-1];
-        az_dt2 = _efield->A_z[_settings->nt-1];
-        az_dt = _efield->A_z[_settings->nt-1];
-        ez = _efield->E_z[_settings->nt-1];
-        ez_dt2 = _efield->E_z[_settings->nt-1];
-        ez_dt = _efield->E_z[_settings->nt-1];
+        ax = _efield->A_x[_settings_swe->nt-1];
+        ax_dt2 = _efield->A_x[_settings_swe->nt-1];
+        ax_dt = _efield->A_x[_settings_swe->nt-1];
+        ex = _efield->E_x[_settings_swe->nt-1];
+        ex_dt2 = _efield->E_x[_settings_swe->nt-1];
+        ex_dt = _efield->E_x[_settings_swe->nt-1];
+        ay = _efield->A_y[_settings_swe->nt-1];
+        ay_dt2 = _efield->A_y[_settings_swe->nt-1];
+        ay_dt = _efield->A_y[_settings_swe->nt-1];
+        ey = _efield->E_y[_settings_swe->nt-1];
+        ey_dt2 = _efield->E_y[_settings_swe->nt-1];
+        ey_dt = _efield->E_y[_settings_swe->nt-1];
+        az = _efield->A_z[_settings_swe->nt-1];
+        az_dt2 = _efield->A_z[_settings_swe->nt-1];
+        az_dt = _efield->A_z[_settings_swe->nt-1];
+        ez = _efield->E_z[_settings_swe->nt-1];
+        ez_dt2 = _efield->E_z[_settings_swe->nt-1];
+        ez_dt = _efield->E_z[_settings_swe->nt-1];
     }
     _clear_kn();
 
@@ -262,25 +262,25 @@ void Solver_cuda::_update_heff(const double ex, const double ey, const double ez
 void Solver_cuda::_update_k1_conv_cuda(const double ex, const double ey, const double ez,
                                   const double ax, const double ay, const double az){
     double dt = _grid->t()[1] - _grid->t()[0];
-    call_pipeline_update_k1(_d_k1, _d_heff, _d_rho, _d_heff_k, _d_rho_k, _d_comm_k, _d_peierls_phase, dt, _settings->nr1, _settings->nr2, _num_orbitals, _stream, _cufft_plan); 
+    call_pipeline_update_k1(_d_k1, _d_heff, _d_rho, _d_heff_k, _d_rho_k, _d_comm_k, _d_peierls_phase, dt, _settings_swe->nr1, _settings_swe->nr2, _num_orbitals, _stream, _cufft_plan); 
 }
 
 void Solver_cuda::_update_k2_conv_cuda(const double ex, const double ey, const double ez,
                                   const double ax, const double ay, const double az){
     double dt = _grid->t()[1] - _grid->t()[0];
-    call_pipeline_update_k2(_d_k2, _d_k1,  _d_heff, _d_rho, _d_heff_k, _d_rho_k, _d_comm_k, _d_peierls_phase, dt, _settings->nr1, _settings->nr2, _num_orbitals, _stream, _cufft_plan); 
+    call_pipeline_update_k2(_d_k2, _d_k1,  _d_heff, _d_rho, _d_heff_k, _d_rho_k, _d_comm_k, _d_peierls_phase, dt, _settings_swe->nr1, _settings_swe->nr2, _num_orbitals, _stream, _cufft_plan); 
 }
 
 void Solver_cuda::_update_k3_conv_cuda(const double ex, const double ey, const double ez,
                                   const double ax, const double ay, const double az){
     double dt = _grid->t()[1] - _grid->t()[0];
-    call_pipeline_update_k3(_d_k3, _d_k2,  _d_heff, _d_rho, _d_heff_k, _d_rho_k, _d_comm_k, _d_peierls_phase, dt, _settings->nr1, _settings->nr2, _num_orbitals, _stream, _cufft_plan); 
+    call_pipeline_update_k3(_d_k3, _d_k2,  _d_heff, _d_rho, _d_heff_k, _d_rho_k, _d_comm_k, _d_peierls_phase, dt, _settings_swe->nr1, _settings_swe->nr2, _num_orbitals, _stream, _cufft_plan); 
 }
 
 void Solver_cuda::_update_k4_conv_cuda(const double ex, const double ey, const double ez,
                                   const double ax, const double ay, const double az){
     double dt = _grid->t()[1] - _grid->t()[0];
-    call_pipeline_update_k4(_d_k4, _d_k3,  _d_heff, _d_rho, _d_heff_k, _d_rho_k, _d_comm_k, _d_peierls_phase, dt, _settings->nr1, _settings->nr2, _num_orbitals, _stream, _cufft_plan); 
+    call_pipeline_update_k4(_d_k4, _d_k3,  _d_heff, _d_rho, _d_heff_k, _d_rho_k, _d_comm_k, _d_peierls_phase, dt, _settings_swe->nr1, _settings_swe->nr2, _num_orbitals, _stream, _cufft_plan); 
 }
 
 void Solver_cuda::_step_rho(){

@@ -14,8 +14,8 @@ class BerryConnection : public Operator{
         int _axis;
         void _setup() override;
     public:
-        BerryConnection(Settings *settings, Grid *grid, WannierTB *wannier, int gauge, int space_type, int axis)
-            : Operator(settings, grid, wannier, gauge, space_type), _axis{axis}{_setup();}
+        BerryConnection(Settings_swe *settings_swe, Grid *grid, WannierTB *wannier, int gauge, int space_type, int axis)
+            : Operator(settings_swe, grid, wannier, gauge, space_type), _axis{axis}{_setup();}
         void convert_to_au() override;
         void convert_to_si() override;
         int axis();

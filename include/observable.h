@@ -3,7 +3,7 @@
 #include <complex>
 #include <vector>
 #include <string>
-#include "settings.h"
+#include "settings_swe.h"
 #include "grid.h"
 #include "operator.h"
 #include "rdm.h"
@@ -17,12 +17,12 @@ class Observable{
         int _num_points;
         int _num_orbitals;
         
-        Settings* _settings;
+        Settings_swe* _settings_swe;
         Grid* _grid;
         RDM* _rho;
         Operator* _operator;
     public:
-        Observable(Settings *settings, Grid* grid, RDM* rho, Operator* op);
+        Observable(Settings_swe *settings_swe, Grid* grid, RDM* rho, Operator* op);
         void calculate();
         void write(std::string filename);
         cdouble* get_ptr();

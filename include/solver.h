@@ -1,6 +1,6 @@
 #pragma once
 
-#include "settings.h"
+#include "settings_swe.h"
 #include "grid.h"
 #include "hamiltonian.h"
 #include "rdm.h"
@@ -10,7 +10,7 @@
 
 class Solver{
     private:
-        Settings* _settings;
+        Settings_swe* _settings_swe;
         Grid* _grid;
         Hamiltonian* _hamiltonian;
         RDM* _rho;
@@ -63,7 +63,7 @@ class Solver{
         void _calc_commutator(cdouble *A, cdouble *B, cdouble *C, const int n);
     public:
         Solver();
-        Solver(Settings* settings,
+        Solver(Settings_swe* settings_swe,
                Grid* grid, 
                Hamiltonian* hamiltonian,
                RDM* rdm,
