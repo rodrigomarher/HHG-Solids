@@ -60,6 +60,7 @@ class SWESim{
     public:
         SWESim();
         SWESim(const std::string &path_tb, Settings* settings);
+        void update_field(double *ex, double *ey, double *ez);
         void run_simulation();
         void test_files(); 
         void set_path_tb(const std::string &path_tb);

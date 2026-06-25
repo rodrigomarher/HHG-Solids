@@ -49,6 +49,20 @@ void Efield::init_fields(){
     }
 }
 
+void Efield::init_fields(double *ex, double *ey, double *ez){
+    double dt = _t[1] - _t[0];
+    for(int i=0; i<_settings->nt; i++){
+        E_x[i] = ex[i];
+        E_y[i] = ey[i];
+        E_z[i] = ez[i];
+    }
+    for(int i=1; i<_settings->nt; i++){
+        A_x[i] = A_x[i-1] - E_x[i-1]*dt;
+        A_y[i] = A_y[i-1] - E_y[i-1]*dt;
+        A_z[i] = A_z[i-1] - E_z[i-1]*dt;
+    }
+}
+
 double Efield::_env_sin2(double ti){
      if (ti<_tmax_field){
         return pow(sin(M_PI*ti/_tmax_field),2);

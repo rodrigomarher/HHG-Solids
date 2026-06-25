@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 import sys
 sys.path.append("../pySWE")
 from pyswe import Settings, SWE
@@ -9,18 +10,24 @@ param = {"path_lib": "../build/libwannier.so",
 	 "nr1": 400,
      "nr2": 400,
      "nr3": 1,
-     "tmax": 120.0,
-     "nt": 8192,
+     "tmax": 90.0,
+     "nt": 4096,
      "intensity": 1e12,
      "lambda": 3000.0,
-     "tmax_field": 120.0,
-     "pol_vec": np.array([1.0, 0.0, 0.0]),
+     "tmax_field": 80.0,
+     "pol_vec": np.array([0.0, 1.0, 0.0]),
      "phi_vec": np.array([0.0, 0.0, 0.0])}
 
 settings = Settings(param)
 
 swe = SWE(settings)
 swe.run_simulation()
+
+swe.restart()
+start_time = time.time()
+swe.run_simulation()
+print("Time: ",time.time() - start_time)
+
 t, jx, jy, jz = swe.get_current()
 dt = t[1] - t[0]
 print(jx)

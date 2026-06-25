@@ -32,5 +32,6 @@ class Efield{
         void convert_to_au();
         void write();
         void init_fields();
+        void init_fields(double *ex, double *ey, double *ez);
         ~Efield(); 
 }; 

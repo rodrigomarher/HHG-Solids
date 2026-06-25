@@ -210,6 +210,10 @@ void SWESim::test_files(){
 
 }
 
+void SWESim::update_field(double *ex, double *ey, double *ez){
+    _efield->init_fields(ex, ey, ez);
+}
+
 void SWESim::run_simulation(){
     #ifdef HAVE_CUDA
     _run_simulation_cuda();
